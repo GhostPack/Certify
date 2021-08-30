@@ -66,6 +66,7 @@ namespace Certify.Commands
         private bool _outputJSON;
         private string? _certificateAuthority = null;
         private string? _domain = null;
+        private string? _ldapServer = null;
         private FindFilter _findFilter = FindFilter.None;
 
         public void Execute(Dictionary<string, string> arguments)
@@ -81,6 +82,11 @@ namespace Certify.Commands
                     Console.WriteLine("[!] /domain:X must be a FQDN");
                     return;
                 }
+            }
+
+            if (arguments.ContainsKey("/ldapserver"))
+            {
+                _ldapServer = arguments["/ldapserver"];
             }
 
             if (arguments.ContainsKey("/ca"))
@@ -128,7 +134,7 @@ namespace Certify.Commands
         {
             var ldap = new LdapOperations(new LdapSearchOptions()
             {
-                Domain = _domain
+                Domain = _domain, LdapServer = _ldapServer
             });
 
             if(!outputJSON)

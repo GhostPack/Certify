@@ -14,6 +14,7 @@ namespace Certify.Commands
         private LdapOperations _ldap = new LdapOperations();
         private bool hideAdmins;
         private string? domain;
+        private string? ldapServer;
 
         public void Execute(Dictionary<string, string> arguments)
         {
@@ -31,9 +32,14 @@ namespace Certify.Commands
                 }
             }
 
+            if (arguments.ContainsKey("/ldapserver"))
+            {
+                ldapServer = arguments["/ldapserver"];
+            }
+
             _ldap = new LdapOperations(new LdapSearchOptions()
             {
-                Domain = domain
+                Domain = domain, LdapServer = ldapServer
             });
 
             Console.WriteLine($"[*] Using the search base '{_ldap.ConfigurationPath}'");
