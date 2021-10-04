@@ -12,7 +12,7 @@ using static Certify.Lib.DisplayUtil;
 
 namespace Certify.Commands
 {
-    class  ResultDTO
+    class ResultDTO
     {
         // used for JSON serialization
         public Dictionary<string, object>? Meta { get; }
@@ -111,7 +111,7 @@ namespace Certify.Commands
                 _findFilter = FindFilter.ClientAuth;
             }
 
-            if(arguments.ContainsKey("/json"))
+            if (arguments.ContainsKey("/json"))
             {
                 _outputJSON = true;
             }
@@ -131,7 +131,7 @@ namespace Certify.Commands
                 Domain = _domain
             });
 
-            if(!outputJSON)
+            if (!outputJSON)
                 Console.WriteLine($"[*] Using the search base '{ldap.ConfigurationPath}'");
 
             if (!string.IsNullOrEmpty(_certificateAuthority))
@@ -224,7 +224,7 @@ namespace Certify.Commands
                 List<CertificateTemplateDTO> templateDTOs = new List<CertificateTemplateDTO>();
 
                 // TODO: how to implement this in LINQ?
-                foreach(var template in templates)
+                foreach (var template in templates)
                 {
                     if (publishedTemplateNames.Contains(template.Name))
                     {
@@ -247,21 +247,21 @@ namespace Certify.Commands
 
         private void PrintCertTemplate(EnterpriseCertificateAuthority ca, CertificateTemplate template)
         {
-            Console.WriteLine($"    CA Name                         : {ca.FullName}");
-            Console.WriteLine($"    Template Name                   : {template.Name}");
-            Console.WriteLine($"    Schema Version                  : {template.SchemaVersion}");
-            Console.WriteLine($"    Validity Period                 : {template.ValidityPeriod}");
-            Console.WriteLine($"    Renewal Period                  : {template.RenewalPeriod}");
-            Console.WriteLine($"    msPKI-Certificates-Name-Flag    : {template.CertificateNameFlag}");
-            Console.WriteLine($"    mspki-enrollment-flag           : {template.EnrollmentFlag}");
-            Console.WriteLine($"    Authorized Signatures Required  : {template.AuthorizedSignatures}");
+            Console.WriteLine($"    CA Name                               : {ca.FullName}");
+            Console.WriteLine($"    Template Name                         : {template.Name}");
+            Console.WriteLine($"    Schema Version                        : {template.SchemaVersion}");
+            Console.WriteLine($"    Validity Period                       : {template.ValidityPeriod}");
+            Console.WriteLine($"    Renewal Period                        : {template.RenewalPeriod}");
+            Console.WriteLine($"    msPKI-Certificates-Name-Flag          : {template.CertificateNameFlag}");
+            Console.WriteLine($"    mspki-enrollment-flag                 : {template.EnrollmentFlag}");
+            Console.WriteLine($"    Authorized Signatures Required        : {template.AuthorizedSignatures}");
             if (template.ApplicationPolicies != null && template.ApplicationPolicies.Any())
             {
                 var applicationPolicyFriendNames = template.ApplicationPolicies
                     .Select(o => ((new Oid(o)).FriendlyName))
                     .OrderBy(s => s)
                     .ToArray();
-                Console.WriteLine($"    Application Policies            : {string.Join(", ", applicationPolicyFriendNames)}");
+                Console.WriteLine($"    Application Policies                  : {string.Join(", ", applicationPolicyFriendNames)}");
             }
             if (template.IssuancePolicies != null && template.IssuancePolicies.Any())
             {
@@ -269,15 +269,22 @@ namespace Certify.Commands
                     .Select(o => ((new Oid(o)).FriendlyName))
                     .OrderBy(s => s)
                     .ToArray();
-                Console.WriteLine($"    Issuance Policies               : {string.Join(", ", issuancePolicyFriendNames)}");
+                Console.WriteLine($"    Issuance Policies                     : {string.Join(", ", issuancePolicyFriendNames)}");
             }
 
             var oidFriendlyNames = template.ExtendedKeyUsage == null
-                ? new []{"<null>"}
+                ? new[] { "<null>" }
                 : template.ExtendedKeyUsage.Select(o => ((new Oid(o)).FriendlyName))
                 .OrderBy(s => s)
                 .ToArray();
-            Console.WriteLine($"    pkiextendedkeyusage             : {string.Join(", ", oidFriendlyNames)}");
+            Console.WriteLine($"    pkiextendedkeyusage                   : {string.Join(", ", oidFriendlyNames)}");
+
+            var certificateApplicationPolicyFriendlyNames = template.CertificateApplicationPolicies == null
+                ? new[] { "<null>" }
+                : template.CertificateApplicationPolicies.Select(o => ((new Oid(o)).FriendlyName))
+                .OrderBy(s => s)
+                .ToArray();
+            Console.WriteLine($"    mspki-certificate-application-policy  : {string.Join(", ", certificateApplicationPolicyFriendlyNames)}");
 
             Console.WriteLine("    Permissions");
             if (_showAllPermissions)
@@ -314,7 +321,7 @@ namespace Certify.Commands
                 if ((rule.ActiveDirectoryRights & ActiveDirectoryRights.ExtendedRight) == ActiveDirectoryRights.ExtendedRight)
                 {
                     // 0e10c968-78fb-11d2-90d4-00c04f79dc55  ->  Certificates-Enrollment right
-                    // 0e10c968-78fb-11d2-90d4-00c04f79dc55  ->  Certificates-AutoEnrollment right
+                    // a05b8cc2-17bc-4802-a710-e7c15ab866a2  ->  Certificates-AutoEnrollment right
                     // 00000000-0000-0000-0000-000000000000  ->  all extended rights
                     switch ($"{rule.ObjectType}")
                     {
@@ -559,7 +566,8 @@ namespace Certify.Commands
             {
                 Console.WriteLine("\n[+] No Vulnerable Certificates Templates found!\n");
             }
-            else {
+            else
+            {
                 Console.WriteLine("\n[!] Vulnerable Certificates Templates :\n");
             }
 
@@ -674,7 +682,7 @@ namespace Certify.Commands
 
             }
 
-            if(vulnerableACL)
+            if (vulnerableACL)
             {
                 return true;
             }
@@ -695,7 +703,7 @@ namespace Certify.Commands
                 (template.ExtendedKeyUsage.Contains(CommonOids.SmartcardLogon) ||
                 template.ExtendedKeyUsage.Contains(CommonOids.ClientAuthentication) ||
                 template.ExtendedKeyUsage.Contains(CommonOids.PKINITClientAuthentication));
-            
+
             if (lowPrivilegedUsersCanEnroll && enrolleeSuppliesSubject && hasAuthenticationEku) return true;
 
 
