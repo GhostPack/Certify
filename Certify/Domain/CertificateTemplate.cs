@@ -115,6 +115,7 @@ namespace Certify.Domain
         public int? AuthorizedSignatures { get; }
         public IEnumerable<string>? ApplicationPolicies { get; }
         public IEnumerable<string>? IssuancePolicies { get; }
+        public IEnumerable<string>? CertificateApplicationPolicies { get; }
 
         // vulnerability-related settings
         public bool? RequiresManagerApproval { get; }
@@ -138,6 +139,7 @@ namespace Certify.Domain
             ExtendedKeyUsage = template?.ExtendedKeyUsage;
             AuthorizedSignatures = template?.AuthorizedSignatures;
             IssuancePolicies = template?.IssuancePolicies;
+            CertificateApplicationPolicies = template?.CertificateApplicationPolicies;
 
             var requiresManagerApproval = template.EnrollmentFlag != null && ((msPKIEnrollmentFlag)template.EnrollmentFlag).HasFlag(msPKIEnrollmentFlag.PEND_ALL_REQUESTS);
             var enrolleeSuppliesSubject = template.CertificateNameFlag != null && ((msPKICertificateNameFlag)template.CertificateNameFlag).HasFlag(msPKICertificateNameFlag.ENROLLEE_SUPPLIES_SUBJECT);
@@ -158,7 +160,7 @@ namespace Certify.Domain
 
     class CertificateTemplate : ADObject
     {
-        public CertificateTemplate(string name, string domainName, Guid? guid, int? schemaVersion, string displayName, string validityPeriod, string renewalPeriod, Oid oid, msPKICertificateNameFlag? certificateNameFlag, msPKIEnrollmentFlag? enrollmentFlag, IEnumerable<string> extendedKeyUsage, int? authorizedSignatures, IEnumerable<string> applicationPolicies, IEnumerable<string> issuancePolicies, ActiveDirectorySecurity securityDescriptor)
+        public CertificateTemplate(string name, string domainName, Guid? guid, int? schemaVersion, string displayName, string validityPeriod, string renewalPeriod, Oid oid, msPKICertificateNameFlag? certificateNameFlag, msPKIEnrollmentFlag? enrollmentFlag, IEnumerable<string> extendedKeyUsage, int? authorizedSignatures, IEnumerable<string> applicationPolicies, IEnumerable<string> issuancePolicies, ActiveDirectorySecurity securityDescriptor, IEnumerable<string> certificateApplicationPolicies)
             : base(securityDescriptor)
         {
             Name = name;
@@ -175,6 +177,7 @@ namespace Certify.Domain
             AuthorizedSignatures = authorizedSignatures;
             ApplicationPolicies = applicationPolicies;
             IssuancePolicies = issuancePolicies;
+            CertificateApplicationPolicies = certificateApplicationPolicies;
         }
         public string? Name { get; }
         public string? DomainName { get; }
@@ -190,5 +193,6 @@ namespace Certify.Domain
         public int? AuthorizedSignatures { get; }
         public IEnumerable<string>? ApplicationPolicies { get; }
         public IEnumerable<string>? IssuancePolicies { get; }
+        public IEnumerable<string>? CertificateApplicationPolicies { get; }
     }
 }

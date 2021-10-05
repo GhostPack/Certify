@@ -171,7 +171,7 @@ namespace Certify.Lib
             return cas;
         }
 
-       
+
         public CertificateAuthority GetNtAuthCertificates()
         {
             // Container location per MS-WCCE 2.2.2.11.3 NTAuthCertificates Object
@@ -243,6 +243,8 @@ namespace Certify.Lib
 
                 var securityDescriptor = ParseSecurityDescriptor(sr);
 
+                var certificateApplicationPolicies = ParseCertificateApplicationPolicies(sr);
+
                 templates.Add(new CertificateTemplate(
                     name,
                     domainName,
@@ -258,7 +260,8 @@ namespace Certify.Lib
                     authorizedSignatures,
                     applicationPolicies,
                     issuancePolicies,
-                    securityDescriptor
+                    securityDescriptor,
+                    certificateApplicationPolicies
                 ));
             }
 
@@ -514,6 +517,14 @@ namespace Certify.Lib
             return from object oid in sr.Properties["mspki-ra-policies"] select oid.ToString();
         }
 
+        private static IEnumerable<string>? ParseCertificateApplicationPolicies(SearchResult sr)
+        {
+            if (!sr.Properties.Contains("mspki-certificate-application-policy"))
+                return null;
+
+            return from object oid in sr.Properties["mspki-certificate-application-policy"] select oid.ToString();
+        }
+
         private T ParseUIntToEnum<T>(string value)
         {
             var uintVal = Convert.ToUInt32(value);
@@ -601,6 +612,6 @@ namespace Certify.Lib
             {
                 return "ERROR";
             }
-        }        
+        }
     }
 }
