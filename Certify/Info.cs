@@ -22,41 +22,41 @@ namespace Certify
             var usage = @"
   Find information about all registered CAs:
     
-    Certify.exe cas [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/hideAdmins] [/showAllPermissions] [/skipWebServiceChecks] [/quiet]
+    Certify.exe cas [/ca:SERVER\ca-name | /domain:domain.local | /ldapserver:server.domain.local | /path:CN=Configuration,DC=domain,DC=local] [/hideAdmins] [/showAllPermissions] [/skipWebServiceChecks] [/quiet]
   
 
   Find all enabled certificate templates:
     
-    Certify.exe find [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
+    Certify.exe find [/ca:SERVER\ca-name | /domain:domain.local | /ldapserver:server.domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
 
   Find vulnerable/abusable certificate templates using default low-privileged groups:
 
-    Certify.exe find /vulnerable [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
+    Certify.exe find /vulnerable [/ca:SERVER\ca-name | /domain:domain.local | /ldapserver:server.domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
 
   Find vulnerable/abusable certificate templates using all groups the current user context is a part of:
 
-    Certify.exe find /vulnerable /currentuser [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
+    Certify.exe find /vulnerable /currentuser [/ca:SERVER\ca-name | /domain:domain.local | /ldapserver:server.domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
 
   Find enabled certificate templates where ENROLLEE_SUPPLIES_SUBJECT is enabled:
 
-    Certify.exe find /enrolleeSuppliesSubject [/ca:SERVER\ca-name| /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
+    Certify.exe find /enrolleeSuppliesSubject [/ca:SERVER\ca-name| /domain:domain.local | /ldapserver:server.domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
 
   Find enabled certificate templates capable of client authentication:
 
-    Certify.exe find /clientauth [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
+    Certify.exe find /clientauth [/ca:SERVER\ca-name | /domain:domain.local | /ldapserver:server.domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
 
   Find all enabled certificate templates, display all of their permissions, and don't display the banner message:
     
-    Certify.exe find /showAllPermissions /quiet [/ca:COMPUTER\CA_NAME | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local]
+    Certify.exe find /showAllPermissions /quiet [/ca:COMPUTER\CA_NAME | /domain:domain.local | /ldapserver:server.domain.local | /path:CN=Configuration,DC=domain,DC=local]
 
   Find all enabled certificate templates and output to a json file:
     
-    Certify.exe find /json /outfile:C:\Temp\out.json [/ca:COMPUTER\CA_NAME | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local]
+    Certify.exe find /json /outfile:C:\Temp\out.json [/ca:COMPUTER\CA_NAME | /domain:domain.local | /ldapserver:server.domain.local | /path:CN=Configuration,DC=domain,DC=local]
 
 
   Enumerate access control information for PKI objects:
 
-    Certify.exe pkiobjects [/domain:domain.local] [/showAdmins] [/quiet]
+    Certify.exe pkiobjects [/domain:domain.local | /ldapserver:server.domain.local] [/showAdmins] [/quiet]
 
 
   Request a new certificate using the current user context:

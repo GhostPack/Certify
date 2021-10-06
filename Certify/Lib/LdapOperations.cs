@@ -14,6 +14,7 @@ namespace Certify.Lib
     {
         private readonly LdapSearchOptions _searchOptions;
         private string? _configurationPath = null;
+        private string? _ldapServer = null;
 
         public string ConfigurationPath
         {
@@ -28,6 +29,25 @@ namespace Certify.Lib
             }
 
             set => _configurationPath = value;
+        }
+
+        public string LdapServer
+        {
+            get
+            {
+                if (_searchOptions.LdapServer == null)
+                {
+                    _ldapServer = "";
+                }
+                else
+                {
+                    _ldapServer = $"{_searchOptions.LdapServer}/";
+                }
+
+                return _ldapServer;
+            }
+
+            set => _ldapServer = value;
         }
 
         public LdapOperations()
@@ -54,7 +74,7 @@ namespace Certify.Lib
 
             // Container location per MS-WCCE 2.2.2.11.2 Enrollment Services Container
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/3ec073ec-9b91-4bee-964e-56f22a93a28c
-            var root = new DirectoryEntry($"LDAP://CN=Public Key Services,CN=Services,{ConfigurationPath}");
+            var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Public Key Services,CN=Services,{ConfigurationPath}");
 
             var ds = new DirectorySearcher(root)
             {
@@ -126,7 +146,7 @@ namespace Certify.Lib
 
             // Container location per MS-WCCE 2.2.2.11.2 Enrollment Services Container
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/3ec073ec-9b91-4bee-964e-56f22a93a28c
-            var root = new DirectoryEntry($"LDAP://CN=Enrollment Services,CN=Public Key Services,CN=Services,{ConfigurationPath}");
+            var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Enrollment Services,CN=Public Key Services,CN=Services,{ConfigurationPath}");
             var ds = new DirectorySearcher(root);
 
             if (caName == null) ds.Filter = "(objectCategory=pKIEnrollmentService)";
@@ -177,7 +197,7 @@ namespace Certify.Lib
         {
             // Container location per MS-WCCE 2.2.2.11.3 NTAuthCertificates Object
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/f1004c63-8508-43b5-9b0b-ee7880183745
-            var root = new DirectoryEntry($"LDAP://CN=NTAuthCertificates,CN=Public Key Services,CN=Services,{ConfigurationPath}");
+            var root = new DirectoryEntry($"LDAP://{LdapServer}CN=NTAuthCertificates,CN=Public Key Services,CN=Services,{ConfigurationPath}");
             var ds = new DirectorySearcher(root);
             ds.Filter = "(objectClass=certificationAuthority)";
 
@@ -211,7 +231,7 @@ namespace Certify.Lib
 
             // Container location per MS-WCCE 2.2.2.11.1 Certificates Templates Container
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/9279abb2-3dfa-4631-845c-43c187ac4b44
-            var root = new DirectoryEntry($"LDAP://CN=Certificate Templates,CN=Public Key Services,CN=Services,{ConfigurationPath}");
+            var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Certificate Templates,CN=Public Key Services,CN=Services,{ConfigurationPath}");
             var ds = new DirectorySearcher(root)
             {
                 SecurityMasks = SecurityMasks.Dacl | SecurityMasks.Owner,
@@ -278,7 +298,7 @@ namespace Certify.Lib
 
             // Container location per MS-WCCE 2.2.2.11.4 Certification Authorities Container
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/6c446198-f670-4885-97a9-cbc50a2b96b4
-            var root = new DirectoryEntry($"LDAP://CN=Certification Authorities,CN=Public Key Services,CN=Services,{ConfigurationPath}");
+            var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Certification Authorities,CN=Public Key Services,CN=Services,{ConfigurationPath}");
             var ds = new DirectorySearcher(root);
 
             ds.Filter = "(objectCategory=certificationAuthority)";
