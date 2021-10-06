@@ -11,12 +11,12 @@ namespace Certify.Commands
         {
             Console.WriteLine("[*] Action: Request a Certificates");
 
-            string CA = "";
-            string subject = "";
-            string altName = "";
-            string template = "User";
-            bool machineContext = false;
-            bool install = false;
+            var CA = "";
+            var subject = "";
+            var altName = "";
+            var template = "User";
+            var machineContext = false;
+            var install = false;
 
             if (arguments.ContainsKey("/ca"))
             {
@@ -70,7 +70,7 @@ namespace Certify.Commands
                     return;
                 }
 
-                string enrollCertPassword = arguments.ContainsKey("/enrollcertpw")
+                var enrollCertPassword = arguments.ContainsKey("/enrollcertpw")
                     ? arguments["/enrollcertpw"]
                     : "";
 

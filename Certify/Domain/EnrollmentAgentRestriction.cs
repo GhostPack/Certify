@@ -7,7 +7,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using Certify.Lib;
 using Microsoft.Win32;
-using Certify.Lib;
 using System.Text;
 
 namespace Certify.Domain
@@ -23,17 +22,17 @@ namespace Certify.Domain
         public EnrollmentAgentRestriction(CommonAce ace)
         {
             Targets = new List<string>();
-            int index = 0;
+            var index = 0;
 
             Agent = ace.SecurityIdentifier.ToString();
-            byte[] bytes = ace.GetOpaque();
+            var bytes = ace.GetOpaque();
 
-            uint sidCount = BitConverter.ToUInt32(bytes, index);
+            var sidCount = BitConverter.ToUInt32(bytes, index);
             index += 4;
 
-            for (int i = 0; i < sidCount; ++i)
+            for (var i = 0; i < sidCount; ++i)
             {
-                SecurityIdentifier sid = new SecurityIdentifier(bytes, index);
+                var sid = new SecurityIdentifier(bytes, index);
                 Targets.Add(sid.ToString());
                 index += sid.BinaryLength;
             }

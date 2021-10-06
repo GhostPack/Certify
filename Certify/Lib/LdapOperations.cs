@@ -67,13 +67,13 @@ namespace Certify.Lib
             {
                 var name = ParseName(sr);
                 var domainName = ParseDomainName(sr);
-                var distinguisheName = ParseDistinguishedName(sr);
+                var distinguishedName = sr.Path;
                 var sd = ParseSecurityDescriptor(sr);
 
                 var pkiObject = new PKIObject(
                     name,
                     domainName,
-                    distinguisheName,
+                    distinguishedName,
                     sd
                 );
 
@@ -84,12 +84,12 @@ namespace Certify.Lib
             var enterpriseCAs = GetEnterpriseCAs();
             if (enterpriseCAs.Count() > 0)
             {
-                List<string> caDNSnames = new List<string>();
+                var caDNSnames = new List<string>();
                 foreach (var enterpriseCA in enterpriseCAs)
                 {
                     caDNSnames.Add($"(dnshostname={enterpriseCA.DnsHostname})");
                 }
-                string caNameFilter = $"(|{ String.Join("", caDNSnames)})";
+                var caNameFilter = $"(|{ String.Join("", caDNSnames)})";
 
                 var caDS = new DirectorySearcher()
                 {
@@ -102,13 +102,13 @@ namespace Certify.Lib
                 {
                     var name = ParseSamAccountName(sr);
                     var domainName = ParseDomainName(sr);
-                    var distinguisheName = ParseDistinguishedName(sr);
+                    var distinguishedName = sr.Path;
                     var sd = ParseSecurityDescriptor(sr);
 
                     var pkiObject = new PKIObject(
                         name,
                         domainName,
-                        distinguisheName,
+                        distinguishedName,
                         sd
                     );
 
@@ -155,6 +155,7 @@ namespace Certify.Lib
                 }
 
                 var ca = new EnterpriseCertificateAuthority(
+                    sr.Path,
                     name,
                     domainName,
                     guid,
@@ -193,6 +194,7 @@ namespace Certify.Lib
             var certs = ParseCaCertificate(sr);
 
             return new CertificateAuthority(
+                sr.Path,
                 name,
                 domainName,
                 guid,
@@ -238,14 +240,15 @@ namespace Certify.Lib
 
                 var ekus = ParseExtendedKeyUsages(sr);
                 var authorizedSignatures = ParseAuthorizedSignatures(sr);
-                var applicationPolicies = ParseApplicationPolicies(sr);
+                var raApplicationPolicies = ParseRaApplicationPolicies(sr);
                 var issuancePolicies = ParseIssuancePolicies(sr);
 
                 var securityDescriptor = ParseSecurityDescriptor(sr);
 
-                var certificateApplicationPolicies = ParseCertificateApplicationPolicies(sr);
+                var applicationPolicies = ParseCertificateApplicationPolicies(sr);
 
                 templates.Add(new CertificateTemplate(
+                    sr.Path,
                     name,
                     domainName,
                     guid,
@@ -258,10 +261,10 @@ namespace Certify.Lib
                     enrollmentFlag,
                     ekus,
                     authorizedSignatures,
-                    applicationPolicies,
+                    raApplicationPolicies,
                     issuancePolicies,
                     securityDescriptor,
-                    certificateApplicationPolicies
+                    applicationPolicies
                 ));
             }
 
@@ -291,6 +294,7 @@ namespace Certify.Lib
                 var certs = ParseCaCertificate(sr);
 
                 var ca = new CertificateAuthority(
+                    sr.Path,
                     name,
                     domainName,
                     guid,
@@ -332,7 +336,7 @@ namespace Certify.Lib
             }
 
             var sdbytes = (byte[])sr.Properties["ntsecuritydescriptor"][0];
-            ActiveDirectorySecurity sd = new ActiveDirectorySecurity();
+            var sd = new ActiveDirectorySecurity();
             sd.SetSecurityDescriptorBinaryForm(sdbytes);
 
             return sd;
@@ -447,7 +451,7 @@ namespace Certify.Lib
             if (!sr.Properties.Contains("mspki-template-schema-version"))
                 return null;
 
-            int schemaVersion = 0;
+            var schemaVersion = 0;
             int.TryParse(sr.Properties["mspki-template-schema-version"][0].ToString(), out schemaVersion);
             return schemaVersion;
         }
@@ -501,7 +505,7 @@ namespace Certify.Lib
             return authorizedSignatures;
         }
 
-        private static IEnumerable<string>? ParseApplicationPolicies(SearchResult sr)
+        private static IEnumerable<string>? ParseRaApplicationPolicies(SearchResult sr)
         {
             if (!sr.Properties.Contains("mspki-ra-application-policies"))
                 return null;

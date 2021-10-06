@@ -15,10 +15,10 @@ namespace Certify.Commands
     class ResultDTO
     {
         // used for JSON serialization
-        public Dictionary<string, object>? Meta { get; }
-        public ResultDTO(string? type, int? count)
+        public Dictionary<string, object?> Meta { get; }
+        public ResultDTO(string type, int count)
         {
-            Meta = new Dictionary<string, object>()
+            Meta = new Dictionary<string, object?>()
             {
                 { "type", type },
                 { "count", count },
@@ -30,8 +30,8 @@ namespace Certify.Commands
     class CAResultDTO : ResultDTO
     {
         // used for JSON serialization
-        public List<EnterpriseCertificateAuthorityDTO>? CertificateAuthorities { get; }
-        public CAResultDTO(List<EnterpriseCertificateAuthorityDTO>? certificateAuthorities)
+        public List<EnterpriseCertificateAuthorityDTO> CertificateAuthorities { get; }
+        public CAResultDTO(List<EnterpriseCertificateAuthorityDTO> certificateAuthorities)
             : base("certificateauthorities", certificateAuthorities.Count)
         {
             CertificateAuthorities = certificateAuthorities;
@@ -41,8 +41,8 @@ namespace Certify.Commands
     class TemplateResultDTO : ResultDTO
     {
         // used for JSON serialization
-        public List<CertificateTemplateDTO>? CertificateTemplates { get; }
-        public TemplateResultDTO(List<CertificateTemplateDTO>? certificateTemplates)
+        public List<CertificateTemplateDTO> CertificateTemplates { get; }
+        public TemplateResultDTO(List<CertificateTemplateDTO> certificateTemplates)
             : base("certificatetemplates", certificateTemplates.Count)
         {
             CertificateTemplates = certificateTemplates;
@@ -142,23 +142,21 @@ namespace Certify.Commands
 
             // get all of our current SIDs
             var ident = WindowsIdentity.GetCurrent();
-            List<string> currentUserSids = ident.Groups.Select(o => o.ToString()).ToList();
+            var currentUserSids = ident.Groups.Select(o => o.ToString()).ToList();
             currentUserSids.Add($"{ident.User}"); // make sure we get our current SID
 
             // enumerate information about every CA object
             var cas = ldap.GetEnterpriseCAs(_certificateAuthority);
 
             // used for JSON serialization
-            List<EnterpriseCertificateAuthorityDTO> caDTOs = new List<EnterpriseCertificateAuthorityDTO>();
+            var caDTOs = new List<EnterpriseCertificateAuthorityDTO>();
 
             if (!cas.Any())
             {
-                if (!outputJSON)
-                    Console.WriteLine("[!] There are no enterprise CAs and therefore no one can request certificates. Stopping...");
-                else
-                {
-                    Console.WriteLine("{\"Error\": \"There are no enterprise CAs and therefore no one can request certificates.\"}");
-                }
+                Console.WriteLine(!outputJSON
+                    ? "[!] There are no enterprise CAs and therefore no one can request certificates. Stopping..."
+                    : "{\"Error\": \"There are no enterprise CAs and therefore no one can request certificates.\"}");
+
                 return;
             }
 
@@ -173,7 +171,7 @@ namespace Certify.Commands
                     }
                     else
                     {
-                        PrintEnterpriseCaInfo(ca, _hideAdmins, _showAllPermissions, null);
+                        PrintEnterpriseCaInfo(ca, _hideAdmins, _showAllPermissions);
                     }
                 }
                 else
@@ -212,27 +210,26 @@ namespace Certify.Commands
                     case FindFilter.ClientAuth:
                         ShowTemplatesAllowingClientAuth(templates, cas);
                         break;
+                    default:
+                        throw new ArgumentOutOfRangeException("_findFilter");
                 }
             }
             else
             {
                 var publishedTemplateNames = (
                     from t in templates
-                    where cas.Any(ca => ca.Templates != null && ca.Templates.Contains(t.Name))
+                    where t.Name != null && cas.Any(ca => ca.Templates != null && ca.Templates.Contains(t.Name))
                     select $"{t.Name}").Distinct().ToArray();
 
-                List<CertificateTemplateDTO> templateDTOs = new List<CertificateTemplateDTO>();
+                var templateDTOs =
+                    (from template in templates
+                     where template.Name != null && publishedTemplateNames.Contains(template.Name)
+                     select new CertificateTemplateDTO(template))
+                    .ToList();
 
                 // TODO: how to implement this in LINQ?
-                foreach (var template in templates)
-                {
-                    if (publishedTemplateNames.Contains(template.Name))
-                    {
-                        templateDTOs.Add(new CertificateTemplateDTO(template));
-                    }
-                }
 
-                List<object> result = new List<object>()
+                var result = new List<object>()
                 {
                     new CAResultDTO(caDTOs),
                     new TemplateResultDTO(templateDTOs)
@@ -255,9 +252,9 @@ namespace Certify.Commands
             Console.WriteLine($"    msPKI-Certificates-Name-Flag          : {template.CertificateNameFlag}");
             Console.WriteLine($"    mspki-enrollment-flag                 : {template.EnrollmentFlag}");
             Console.WriteLine($"    Authorized Signatures Required        : {template.AuthorizedSignatures}");
-            if (template.ApplicationPolicies != null && template.ApplicationPolicies.Any())
+            if (template.RaApplicationPolicies != null && template.RaApplicationPolicies.Any())
             {
-                var applicationPolicyFriendNames = template.ApplicationPolicies
+                var applicationPolicyFriendNames = template.RaApplicationPolicies
                     .Select(o => ((new Oid(o)).FriendlyName))
                     .OrderBy(s => s)
                     .ToArray();
@@ -279,18 +276,25 @@ namespace Certify.Commands
                 .ToArray();
             Console.WriteLine($"    pkiextendedkeyusage                   : {string.Join(", ", oidFriendlyNames)}");
 
-            var certificateApplicationPolicyFriendlyNames = template.CertificateApplicationPolicies == null
+            var certificateApplicationPolicyFriendlyNames = template.ApplicationPolicies == null
                 ? new[] { "<null>" }
-                : template.CertificateApplicationPolicies.Select(o => ((new Oid(o)).FriendlyName))
+                : template.ApplicationPolicies.Select(o => ((new Oid(o)).FriendlyName))
                 .OrderBy(s => s)
                 .ToArray();
             Console.WriteLine($"    mspki-certificate-application-policy  : {string.Join(", ", certificateApplicationPolicyFriendlyNames)}");
 
             Console.WriteLine("    Permissions");
-            if (_showAllPermissions)
-                PrintAllPermissions(template.SecurityDescriptor);
+            if (template.SecurityDescriptor == null)
+            {
+                Console.WriteLine("      Security descriptor is null");
+            }
             else
-                PrintAllowPermissions(template.SecurityDescriptor);
+            {
+                if (_showAllPermissions)
+                    PrintAllPermissions(template.SecurityDescriptor);
+                else
+                    PrintAllowPermissions(template.SecurityDescriptor);
+            }
 
             Console.WriteLine();
         }
@@ -435,11 +439,6 @@ namespace Certify.Commands
 
         private void PrintAllPermissions(ActiveDirectorySecurity sd)
         {
-            if (sd == null)
-            {
-                Console.WriteLine("      Security descriptor is null");
-                return;
-            }
             var ownerSid = sd.GetOwner(typeof(SecurityIdentifier));
             var ownerStr = GetUserSidString(ownerSid.ToString());
             var aces = sd.GetAccessRules(true, true, typeof(SecurityIdentifier));
@@ -492,6 +491,12 @@ namespace Certify.Commands
 
             foreach (var template in templates)
             {
+                if (template.Name == null)
+                {
+                    Console.WriteLine("   Warning: Found a template, but could not get its name. Ignoring it.");
+                    continue;
+                }
+
                 foreach (var ca in cas)
                 {
                     if (ca.Templates != null && !ca.Templates.Contains(template.Name)) // check if this CA has this template enabled
@@ -511,6 +516,12 @@ namespace Certify.Commands
 
             foreach (var template in templates)
             {
+                if (template.Name == null)
+                {
+                    Console.WriteLine($"   Warning: Unable to get the name of the template '{template.DistinguishedName}'. Ignoring it.");
+                    continue;
+                }
+
                 foreach (var ca in cas)
                 {
                     if (ca.Templates != null && !ca.Templates.Contains(template.Name)) // check if this CA has this template enabled
@@ -534,6 +545,12 @@ namespace Certify.Commands
 
             foreach (var template in templates)
             {
+                if (template.Name == null)
+                {
+                    Console.WriteLine($"   Warning: Unable to get the name of the template '{template.DistinguishedName}'. Ignoring it.");
+                    continue;
+                }
+
                 foreach (var ca in cas)
                 {
                     if (ca.Templates != null && !ca.Templates.Contains(template.Name)) // check if this CA has this template enabled
@@ -544,16 +561,21 @@ namespace Certify.Commands
             }
         }
 
-        private void ShowVulnerableTemplates(IEnumerable<CertificateTemplate> templates, IEnumerable<EnterpriseCertificateAuthority> cas, List<string> currentUserSids = null)
+        private void ShowVulnerableTemplates(IEnumerable<CertificateTemplate> templates, IEnumerable<EnterpriseCertificateAuthority> cas, List<string>? currentUserSids = null)
         {
+            foreach (var t in templates.Where(t => t.Name == null))
+            {
+                Console.WriteLine($"[!] Warning: Could not get the name of the template {t.DistinguishedName}. Analysis will be incomplete as a result.");
+            }
+
             var unusedTemplates = (
                 from t in templates
-                where !cas.Any(ca => ca.Templates != null && ca.Templates.Contains(t.Name)) && IsCertificateTemplateVulnerable(t)
+                where t.Name != null && !cas.Any(ca => ca.Templates != null && ca.Templates.Contains(t.Name)) && IsCertificateTemplateVulnerable(t)
                 select $"{t.Name}").ToArray();
 
             var vulnerableTemplates = (
                 from t in templates
-                where cas.Any(ca => ca.Templates != null && ca.Templates.Contains(t.Name)) && IsCertificateTemplateVulnerable(t)
+                where t.Name != null && cas.Any(ca => ca.Templates != null && ca.Templates.Contains(t.Name)) && IsCertificateTemplateVulnerable(t)
                 select $"{t.Name}").ToArray();
 
             if (unusedTemplates.Any())
@@ -562,14 +584,9 @@ namespace Certify.Commands
                 Console.WriteLine($"    {string.Join("\n    ", unusedTemplates)}\n");
             }
 
-            if (!vulnerableTemplates.Any())
-            {
-                Console.WriteLine("\n[+] No Vulnerable Certificates Templates found!\n");
-            }
-            else
-            {
-                Console.WriteLine("\n[!] Vulnerable Certificates Templates :\n");
-            }
+            Console.WriteLine(!vulnerableTemplates.Any()
+                ? "\n[+] No Vulnerable Certificates Templates found!\n"
+                : "\n[!] Vulnerable Certificates Templates :\n");
 
             foreach (var template in templates)
             {
@@ -578,7 +595,18 @@ namespace Certify.Commands
 
                 foreach (var ca in cas)
                 {
-                    if (ca.Templates != null && !ca.Templates.Contains(template.Name)) // check if this CA has this template enabled
+                    if (ca.Templates == null)
+                    {
+                        Console.WriteLine($"   Warning: Unable to get the published templates on the CA {ca.DistinguishedName}. Ignoring it...");
+                        continue;
+                    }
+                    if (template.Name == null)
+                    {
+                        Console.WriteLine($"   Warning: Unable to get the name of the template {template.DistinguishedName}. Ignoring it...");
+                        continue;
+                    }
+
+                    if (!ca.Templates.Contains(template.Name)) // check if this CA has this template enabled
                         continue;
 
                     PrintCertTemplate(ca, template);
@@ -586,8 +614,11 @@ namespace Certify.Commands
             }
         }
 
-        private bool IsCertificateTemplateVulnerable(CertificateTemplate template, List<string> currentUserSids = null)
+        private bool IsCertificateTemplateVulnerable(CertificateTemplate template, List<string>? currentUserSids = null)
         {
+            if (template.SecurityDescriptor == null)
+                throw new NullReferenceException($"Could not get the security descriptor for the template '{template.DistinguishedName}'");
+
             var ownerSID = $"{template.SecurityDescriptor.GetOwner(typeof(SecurityIdentifier)).Value}";
 
             if (currentUserSids == null)

@@ -60,9 +60,9 @@ namespace Certify.Domain
     {
         // used for JSON serialization
         public string? Owner { get; }
-        public List<EnterpriseCertificateAuthorityACE>? ACEs { get; }
+        public List<EnterpriseCertificateAuthorityACE> ACEs { get; }
 
-        public EnterpriseCertificateAuthorityACL(ActiveDirectorySecurity? securityDescriptor)
+        public EnterpriseCertificateAuthorityACL(ActiveDirectorySecurity securityDescriptor)
         {
             Owner = ((SecurityIdentifier)securityDescriptor.GetOwner(typeof(SecurityIdentifier))).Value.ToString();
             var rules = securityDescriptor.GetAccessRules(true, true, typeof(SecurityIdentifier));
@@ -94,17 +94,43 @@ namespace Certify.Domain
 
         public List<string>? Templates { get; }
 
-        public bool? EDITF_ATTRIBUTESUBJECTALTNAME2 { get;}
+        public bool? EDITF_ATTRIBUTESUBJECTALTNAME2 { get; }
 
         public EnterpriseCertificateAuthorityACL? ACL { get; }
 
         public List<EnrollmentAgentRestriction>? EnrollmentAgentRestrictions { get; }
 
-        public EnterpriseCertificateAuthorityDTO(EnterpriseCertificateAuthority? ca)
+        public EnterpriseCertificateAuthorityDTO(EnterpriseCertificateAuthority ca)
         {
-            var securityDescriptor = ca.GetServerSecurityFromRegistry();
-            var eaSecurityDescriptor = ca.GetEnrollmentAgentSecurity();
-            var userSpecifiesSanEnabled = ca.IsUserSpecifiesSanEnabled();
+            ActiveDirectorySecurity? securityDescriptor = null;
+            RawSecurityDescriptor? eaSecurityDescriptor = null;
+            bool? userSpecifiesSanEnabled = null;
+            try
+            {
+                securityDescriptor = ca.GetServerSecurityFromRegistry();
+            }
+            catch
+            {
+                // ignored
+            }
+
+            try
+            {
+                eaSecurityDescriptor = ca.GetEnrollmentAgentSecurity();
+            }
+            catch
+            {
+                // ignored
+            }
+
+            try
+            {
+                userSpecifiesSanEnabled = ca.IsUserSpecifiesSanEnabled();
+            }
+            catch
+            {
+                // ignored
+            }
 
             Name = ca?.Name;
             DomainName = ca?.DomainName;
@@ -115,25 +141,22 @@ namespace Certify.Domain
             EDITF_ATTRIBUTESUBJECTALTNAME2 = userSpecifiesSanEnabled;
 
             Certificates = new List<CertificateDTO>();
-            foreach (var cert in ca.Certificates)
+            if (ca?.Certificates != null)
             {
-                Certificates.Add(new CertificateDTO(cert));
+                foreach (var cert in ca.Certificates)
+                {
+                    Certificates.Add(new CertificateDTO(cert));
+                }
             }
 
-            if (securityDescriptor == null)
-            {
-                ACL = null;
-            }
-            else
-            {
-                ACL = new EnterpriseCertificateAuthorityACL(securityDescriptor);
-            }
+            ACL = securityDescriptor == null ? null : new EnterpriseCertificateAuthorityACL(securityDescriptor);
 
-            if(eaSecurityDescriptor == null)
+            if (eaSecurityDescriptor == null)
             {
                 EnrollmentAgentRestrictions = null;
             }
-            else {
+            else
+            {
                 EnrollmentAgentRestrictions = new List<EnrollmentAgentRestriction>();
 
                 foreach (CommonAce ace in eaSecurityDescriptor.DiscretionaryAcl)
@@ -150,8 +173,8 @@ namespace Certify.Domain
         public string? DnsHostname { get; }
         public string? FullName => $"{DnsHostname}\\{Name}";
 
-        public EnterpriseCertificateAuthority(string? name, string? domainName, Guid? guid, string? dnsHostname, PkiCertificateAuthorityFlags? flags, List<X509Certificate2>? certificates, ActiveDirectorySecurity? securityDescriptor, List<string>? templates)
-            : base(name, domainName, guid, flags, certificates, securityDescriptor)
+        public EnterpriseCertificateAuthority(string distinguishedName, string? name, string? domainName, Guid? guid, string? dnsHostname, PkiCertificateAuthorityFlags? flags, List<X509Certificate2>? certificates, ActiveDirectorySecurity? securityDescriptor, List<string>? templates)
+            : base(distinguishedName, name, domainName, guid, flags, certificates, securityDescriptor)
         {
             DnsHostname = dnsHostname;
             Templates = templates;
@@ -177,7 +200,7 @@ namespace Certify.Domain
             byte[] security;
             try
             {
-                RegistryKey key = baseKey.OpenSubKey($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}");
+                var key = baseKey.OpenSubKey($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}");
                 security = (byte[])key.GetValue("Security");
             }
             catch (SecurityException e)
@@ -192,7 +215,7 @@ namespace Certify.Domain
             return securityDescriptor;
         }
 
-        public RawSecurityDescriptor GetEnrollmentAgentSecurity()
+        public RawSecurityDescriptor? GetEnrollmentAgentSecurity()
         {
             //  NOTE: this appears to work even if admin rights aren't available on the remote CA server...
             RegistryKey baseKey;
@@ -208,7 +231,7 @@ namespace Certify.Domain
             byte[] security;
             try
             {
-                RegistryKey key = baseKey.OpenSubKey($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}");
+                var key = baseKey.OpenSubKey($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}");
                 security = (byte[])key.GetValue("EnrollmentAgentRights");
             }
             catch (SecurityException e)
@@ -216,19 +239,14 @@ namespace Certify.Domain
                 throw new Exception($"Could not access the 'EnrollmentAgentRights' registry value: {e.Message}");
             }
 
-            if(security == null)
-            {
-                return null;
-            }
-
-            return new RawSecurityDescriptor(security, 0);
+            return security == null ? null : new RawSecurityDescriptor(security, 0);
         }
 
 
         public bool IsUserSpecifiesSanEnabled()
         {
-            if(DnsHostname == null) throw new NullReferenceException("DnsHostname is null");
-            if(Name == null) throw new NullReferenceException("Name is null");
+            if (DnsHostname == null) throw new NullReferenceException("DnsHostname is null");
+            if (Name == null) throw new NullReferenceException("Name is null");
 
             // ref- https://blog.keyfactor.com/hidden-dangers-certificate-subject-alternative-names-sans
             //  NOTE: this appears to usually work, even if admin rights aren't available on the remote CA server
@@ -245,7 +263,7 @@ namespace Certify.Domain
             int editFlags;
             try
             {
-                RegistryKey key = baseKey.OpenSubKey($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}\\PolicyModules\\CertificateAuthority_MicrosoftDefault.Policy");
+                var key = baseKey.OpenSubKey($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}\\PolicyModules\\CertificateAuthority_MicrosoftDefault.Policy");
                 editFlags = (int)key.GetValue("EditFlags");
             }
             catch (SecurityException e)
@@ -259,7 +277,7 @@ namespace Certify.Domain
 
         public CertificateAuthorityWebServices GetWebServices()
         {
-            if(DnsHostname == null) throw new NullReferenceException("DnsHostname is null");
+            if (DnsHostname == null) throw new NullReferenceException("DnsHostname is null");
 
             var webservices = new CertificateAuthorityWebServices();
 

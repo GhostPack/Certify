@@ -13,7 +13,7 @@ namespace Certify.Commands
             Console.WriteLine("[*] Action: Download a Certificates");
 
             string CA;
-            bool install = arguments.ContainsKey("/install");
+            var install = arguments.ContainsKey("/install");
 
             if (arguments.ContainsKey("/ca"))
             {

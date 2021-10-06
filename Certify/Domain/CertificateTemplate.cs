@@ -78,7 +78,7 @@ namespace Certify.Domain
         public string? Owner { get; }
         public List<CertificateTemplateACE>? ACEs { get; }
 
-        public CertificateTemplateACL(ActiveDirectorySecurity? securityDescriptor)
+        public CertificateTemplateACL(ActiveDirectorySecurity securityDescriptor)
         {
             Owner = ((SecurityIdentifier)securityDescriptor.GetOwner(typeof(SecurityIdentifier))).Value.ToString();
             var rules = securityDescriptor.GetAccessRules(true, true, typeof(SecurityIdentifier));
@@ -123,23 +123,23 @@ namespace Certify.Domain
 
         public CertificateTemplateACL? ACL { get; }
 
-        public CertificateTemplateDTO(CertificateTemplate? template)
+        public CertificateTemplateDTO(CertificateTemplate template)
         {
             var securityDescriptor = template.SecurityDescriptor;
 
-            Name = template?.Name;
-            DomainName = template?.DomainName;
-            Guid = template?.Guid;
-            DisplayName = template?.DisplayName;
-            ValidityPeriod = template?.ValidityPeriod;
-            RenewalPeriod = template?.RenewalPeriod;
-            Oid = template?.Oid;
-            CertificateNameFlag = template?.CertificateNameFlag;
-            EnrollmentFlag = template?.EnrollmentFlag;
-            ExtendedKeyUsage = template?.ExtendedKeyUsage;
-            AuthorizedSignatures = template?.AuthorizedSignatures;
-            IssuancePolicies = template?.IssuancePolicies;
-            CertificateApplicationPolicies = template?.CertificateApplicationPolicies;
+            Name = template.Name;
+            DomainName = template.DomainName;
+            Guid = template.Guid;
+            DisplayName = template.DisplayName;
+            ValidityPeriod = template.ValidityPeriod;
+            RenewalPeriod = template.RenewalPeriod;
+            Oid = template.Oid;
+            CertificateNameFlag = template.CertificateNameFlag;
+            EnrollmentFlag = template.EnrollmentFlag;
+            ExtendedKeyUsage = template.ExtendedKeyUsage;
+            AuthorizedSignatures = template.AuthorizedSignatures;
+            IssuancePolicies = template.IssuancePolicies;
+            CertificateApplicationPolicies = template.ApplicationPolicies;
 
             var requiresManagerApproval = template.EnrollmentFlag != null && ((msPKIEnrollmentFlag)template.EnrollmentFlag).HasFlag(msPKIEnrollmentFlag.PEND_ALL_REQUESTS);
             var enrolleeSuppliesSubject = template.CertificateNameFlag != null && ((msPKICertificateNameFlag)template.CertificateNameFlag).HasFlag(msPKICertificateNameFlag.ENROLLEE_SUPPLIES_SUBJECT);
@@ -160,8 +160,8 @@ namespace Certify.Domain
 
     class CertificateTemplate : ADObject
     {
-        public CertificateTemplate(string name, string domainName, Guid? guid, int? schemaVersion, string displayName, string validityPeriod, string renewalPeriod, Oid oid, msPKICertificateNameFlag? certificateNameFlag, msPKIEnrollmentFlag? enrollmentFlag, IEnumerable<string> extendedKeyUsage, int? authorizedSignatures, IEnumerable<string> applicationPolicies, IEnumerable<string> issuancePolicies, ActiveDirectorySecurity securityDescriptor, IEnumerable<string> certificateApplicationPolicies)
-            : base(securityDescriptor)
+        public CertificateTemplate(string distinguishedName, string? name, string? domainName, Guid? guid, int? schemaVersion, string? displayName, string? validityPeriod, string? renewalPeriod, Oid? oid, msPKICertificateNameFlag? certificateNameFlag, msPKIEnrollmentFlag? enrollmentFlag, IEnumerable<string>? extendedKeyUsage, int? authorizedSignatures, IEnumerable<string>? raApplicationPolicies, IEnumerable<string>? issuancePolicies, ActiveDirectorySecurity? securityDescriptor, IEnumerable<string>? applicationPolicies)
+            : base(distinguishedName, securityDescriptor)
         {
             Name = name;
             DomainName = domainName;
@@ -175,9 +175,9 @@ namespace Certify.Domain
             EnrollmentFlag = enrollmentFlag;
             ExtendedKeyUsage = extendedKeyUsage;
             AuthorizedSignatures = authorizedSignatures;
-            ApplicationPolicies = applicationPolicies;
+            RaApplicationPolicies = raApplicationPolicies;
             IssuancePolicies = issuancePolicies;
-            CertificateApplicationPolicies = certificateApplicationPolicies;
+            ApplicationPolicies = applicationPolicies;
         }
         public string? Name { get; }
         public string? DomainName { get; }
@@ -191,8 +191,8 @@ namespace Certify.Domain
         public msPKIEnrollmentFlag? EnrollmentFlag { get; }
         public IEnumerable<string>? ExtendedKeyUsage { get; }
         public int? AuthorizedSignatures { get; }
-        public IEnumerable<string>? ApplicationPolicies { get; }
+        public IEnumerable<string>? RaApplicationPolicies { get; }
         public IEnumerable<string>? IssuancePolicies { get; }
-        public IEnumerable<string>? CertificateApplicationPolicies { get; }
+        public IEnumerable<string>? ApplicationPolicies { get; }
     }
 }

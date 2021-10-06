@@ -12,7 +12,7 @@ namespace Certify.Lib
 {
     class DisplayUtil
     {
-        public static void PrintEnterpriseCaInfo(EnterpriseCertificateAuthority ca, bool hideAdmins, bool showAllPermissions, List<string> currentUserSids = null)
+        public static void PrintEnterpriseCaInfo(EnterpriseCertificateAuthority ca, bool hideAdmins, bool showAllPermissions, List<string>? currentUserSids = null)
         {
             Console.WriteLine($"    Enterprise CA Name            : {ca?.Name}");
             Console.WriteLine($"    DNS Hostname                  : {ca?.DnsHostname}");
@@ -22,7 +22,7 @@ namespace Certify.Lib
             if (ca == null) throw new NullReferenceException("CA is null");
             ca.Certificates?.ForEach(PrintCertificateInfo);
 
-            bool userSpecifiesSanEnabled = false;
+            var userSpecifiesSanEnabled = false;
             string? errorMessage = null;
             try
             {
@@ -132,7 +132,7 @@ namespace Certify.Lib
 
                 foreach (CommonAce ace in eaSecurityDescriptor.DiscretionaryAcl)
                 {
-                    EnrollmentAgentRestriction entry = new EnrollmentAgentRestriction(ace);
+                    var entry = new EnrollmentAgentRestriction(ace);
                     Console.WriteLine($"      {GetUserSidString(entry.Agent)}");
                     Console.WriteLine($"        Template : {entry.Template}");
                     Console.WriteLine($"        Targets  :");
@@ -151,94 +151,92 @@ namespace Certify.Lib
 
             foreach (var pkiObject in pkiObjects)
             {
-                if (pkiObject.SecurityDescriptor != null)
+                if (pkiObject.SecurityDescriptor == null) continue;
+
+                var ownerSid = pkiObject.SecurityDescriptor.GetOwner(typeof(SecurityIdentifier));
+                var owner = ownerSid;
+                try
                 {
-                    var ownerSid = pkiObject.SecurityDescriptor.GetOwner(typeof(SecurityIdentifier));
-                    var owner = ownerSid;
-                    try
-                    {
-                        owner = pkiObject.SecurityDescriptor.GetOwner(typeof(NTAccount));
-                    }
-                    catch(Exception e)
-                    {
-                        owner = null;
-                    }
+                    owner = pkiObject.SecurityDescriptor.GetOwner(typeof(NTAccount));
+                }
+                catch
+                {
+                    owner = null;
+                }
 
-                    var ownerKey = $"{owner}\t{ownerSid}";
+                var ownerKey = $"{owner}\t{ownerSid}";
                     
-                    if(!objectControllers.ContainsKey(ownerKey))
+                if(!objectControllers.ContainsKey(ownerKey))
+                {
+                    objectControllers[ownerKey] = new ArrayList();
+                }
+
+                objectControllers[ownerKey].Add(new[] { "Owner", pkiObject .DistinguishedName});
+
+                var aces = pkiObject.SecurityDescriptor.GetAccessRules(true, true, typeof(SecurityIdentifier));
+
+                foreach (ActiveDirectoryAccessRule ace in aces)
+                {
+                    var principalSid = ace.IdentityReference.ToString();
+                    var principalName = GetUserNameFromSid(principalSid);
+                    var rights = ace.ActiveDirectoryRights;
+
+                    var principalKey = $"{principalName}\t{principalSid}";
+
+                    if (!objectControllers.ContainsKey(principalKey))
                     {
-                        objectControllers[ownerKey] = new ArrayList();
+                        objectControllers[principalKey] = new ArrayList();
                     }
 
-                    objectControllers[ownerKey].Add(new[] { "Owner", pkiObject .DistinguishedName});
-
-                    var aces = pkiObject.SecurityDescriptor.GetAccessRules(true, true, typeof(SecurityIdentifier));
-
-                    foreach (ActiveDirectoryAccessRule ace in aces)
+                    if (rights.HasFlag(ActiveDirectoryRights.GenericAll))
                     {
-                        var principalSid = ace.IdentityReference.ToString();
-                        var principalName = GetUserNameFromSid(principalSid);
-                        var rights = ace.ActiveDirectoryRights;
-
-                        var principalKey = $"{principalName}\t{principalSid}";
-
-                        if (!objectControllers.ContainsKey(principalKey))
-                        {
-                            objectControllers[principalKey] = new ArrayList();
-                        }
-
-                        if (rights.HasFlag(ActiveDirectoryRights.GenericAll))
-                        {
-                            objectControllers[principalKey].Add(new[] { "GenericAll", pkiObject.DistinguishedName });
-                        }
-                        else if (rights.HasFlag(ActiveDirectoryRights.WriteOwner))
-                        {
-                            objectControllers[principalKey].Add(new[] { "WriteOwner", pkiObject.DistinguishedName });
-                        }
-                        else if (rights.HasFlag(ActiveDirectoryRights.WriteDacl))
-                        {
-                            objectControllers[principalKey].Add(new[] { "WriteDacl", pkiObject.DistinguishedName });
-                        }
-                        else if (rights.HasFlag(ActiveDirectoryRights.WriteProperty) && ($"{ace.ObjectType}" == "00000000-0000-0000-0000-000000000000"))
-                        {
-                            objectControllers[principalKey].Add(new[] { "WriteAllProperties", pkiObject.DistinguishedName });
-                        }
+                        objectControllers[principalKey].Add(new[] { "GenericAll", pkiObject.DistinguishedName });
+                    }
+                    else if (rights.HasFlag(ActiveDirectoryRights.WriteOwner))
+                    {
+                        objectControllers[principalKey].Add(new[] { "WriteOwner", pkiObject.DistinguishedName });
+                    }
+                    else if (rights.HasFlag(ActiveDirectoryRights.WriteDacl))
+                    {
+                        objectControllers[principalKey].Add(new[] { "WriteDacl", pkiObject.DistinguishedName });
+                    }
+                    else if (rights.HasFlag(ActiveDirectoryRights.WriteProperty) && ($"{ace.ObjectType}" == "00000000-0000-0000-0000-000000000000"))
+                    {
+                        objectControllers[principalKey].Add(new[] { "WriteAllProperties", pkiObject.DistinguishedName });
                     }
                 }
             }
 
             foreach (var v in objectControllers)
             {
-                if (v.Value.Count > 0)
+                if (v.Value.Count == 0) continue;
+
+                var parts = v.Key.Split('\t');
+                var userName = parts[0];
+                var userSID = parts[1];
+                var userString = userSID;
+
+                if (hideAdmins &&
+                    (userSID.EndsWith("-519") ||
+                     userSID.EndsWith("-512") ||
+                     (userSID == "S-1-5-32-544") ||
+                     (userSID == "S-1-5-18"))
+                )
                 {
-                    string[] parts = v.Key.Split('\t');
-                    string userName = parts[0];
-                    string userSID = parts[1];
-                    var userString = userSID;
+                    continue;
+                }
 
-                    if (hideAdmins &&
-                        (userSID.EndsWith("-519") ||
-                        userSID.EndsWith("-512") ||
-                        (userSID == "S-1-5-32-544") ||
-                        (userSID == "S-1-5-18"))
-                        )
-                    {
-                        continue;
-                    }
+                if (!String.IsNullOrEmpty(userName))
+                {
+                    userString = $"{userName} ({userSID})";
+                }
+                Console.WriteLine($"\n    {userString}");
 
-                    if (!String.IsNullOrEmpty(userName))
-                    {
-                        userString = $"{userName} ({userSID})";
-                    }
-                    Console.WriteLine($"\n    {userString}");
-
-                    foreach (var entry in v.Value)
-                    {
-                        // value -> (right, DN) tuple
-                        var right = (System.String[])entry;
-                        Console.WriteLine($"        {right[0],-18} {right[1]}");
-                    }
+                foreach (var entry in v.Value)
+                {
+                    // value -> (right, DN) tuple
+                    var right = (System.String[])entry;
+                    Console.WriteLine($"        {right[0],-18} {right[1]}");
                 }
             }
         }
@@ -329,20 +327,19 @@ namespace Certify.Lib
 
         public static string? GetDomainFromDN(string dn)
         {
-            int index = dn.IndexOf("DC=");
+            var index = dn.IndexOf("DC=");
             if(index == -1)
             {
                 return null;
             }
-            else
+
+            try 
             {
-                try {
-                    return dn.Substring(index + 3, dn.Length - index - 3).Replace(",DC=", ".");
-                }
-                catch
-                {
-                    return null;
-                }
+                return dn.Substring(index + 3, dn.Length - index - 3).Replace(",DC=", ".");
+            }
+            catch
+            {
+                return null;
             }
         }
     }

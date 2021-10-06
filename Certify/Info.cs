@@ -19,7 +19,7 @@ namespace Certify
 
         public static void ShowUsage()
         {
-            string usage = @"
+            var usage = @"
   Find information about all registered CAs:
     
     Certify.exe cas [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/hideAdmins] [/showAllPermissions] [/skipWebServiceChecks] [/quiet]

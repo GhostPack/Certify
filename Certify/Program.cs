@@ -11,12 +11,12 @@ namespace Certify
         {
             // execute w/ stdout/err redirected to a file
 
-            string file = parsedArgs["/outfile"];
+            var file = parsedArgs["/outfile"];
 
-            TextWriter realStdOut = Console.Out;
-            TextWriter realStdErr = Console.Error;
+            var realStdOut = Console.Out;
+            var realStdErr = Console.Error;
 
-            using (StreamWriter writer = new StreamWriter(file, false))
+            using (var writer = new StreamWriter(file, false))
             {
                 writer.AutoFlush = true;
                 Console.SetOut(writer);
@@ -34,7 +34,7 @@ namespace Certify
         private static void MainExecute(string commandName, Dictionary<string, string> parsedArgs)
         {
             // main execution logic
-            Stopwatch sw = new Stopwatch();
+            var sw = new Stopwatch();
             sw.Start();
 
             if(!(parsedArgs.ContainsKey("/quiet") || parsedArgs.ContainsKey("/q") || parsedArgs.ContainsKey("/json")))
@@ -67,7 +67,7 @@ namespace Certify
             // helper that executes an input string command and returns results as a string
             //  useful for PSRemoting execution
 
-            string[] args = command.Split();
+            var args = command.Split();
 
             var parsed = ArgumentParser.Parse(args);
             if (parsed.ParsedOk == false)
@@ -79,8 +79,8 @@ namespace Certify
 
             var commandName = args.Length != 0 ? args[0] : "";
 
-            TextWriter realStdOut = Console.Out;
-            TextWriter realStdErr = Console.Error;
+            var realStdOut = Console.Out;
+            var realStdErr = Console.Error;
             TextWriter stdOutWriter = new StringWriter();
             TextWriter stdErrWriter = new StringWriter();
             Console.SetOut(stdOutWriter);
@@ -93,7 +93,7 @@ namespace Certify
             Console.SetOut(realStdOut);
             Console.SetError(realStdErr);
 
-            string output = "";
+            var output = "";
             output += stdOutWriter.ToString();
             output += stdErrWriter.ToString();
 

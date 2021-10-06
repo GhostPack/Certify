@@ -39,8 +39,8 @@ namespace Certify.Domain
 
 
         private bool _disposed;
-        public CertificateAuthority(string? name, string? domainName, Guid? guid, PkiCertificateAuthorityFlags? flags, List<X509Certificate2>? certificates, ActiveDirectorySecurity? securityDescriptor)
-            : base(securityDescriptor)
+        public CertificateAuthority(string distinguishedName, string? name, string? domainName, Guid? guid, PkiCertificateAuthorityFlags? flags, List<X509Certificate2>? certificates, ActiveDirectorySecurity? securityDescriptor)
+            : base(distinguishedName, securityDescriptor)
         {
             Name = name;
             DomainName = domainName;
