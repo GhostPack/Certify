@@ -5,9 +5,9 @@ using System.IO;
 
 namespace Certify
 {
-    class Program
+    public class Program
     {
-        private static void FileExecute(string commandName, Dictionary<string, string> parsedArgs)
+        public static void FileExecute(string commandName, Dictionary<string, string> parsedArgs)
         {
             // execute w/ stdout/err redirected to a file
 
@@ -31,7 +31,7 @@ namespace Certify
             Console.SetError(realStdErr);
         }
 
-        private static void MainExecute(string commandName, Dictionary<string, string> parsedArgs)
+        public static void MainExecute(string commandName, Dictionary<string, string> parsedArgs)
         {
             // main execution logic
             var sw = new Stopwatch();
@@ -100,7 +100,7 @@ namespace Certify
             return output;
         }
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             try
             {
