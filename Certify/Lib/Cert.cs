@@ -53,6 +53,11 @@ namespace Certify
                 }
                 else
                 {
+                    if (WindowsIdentity.GetCurrent().IsSystem)
+                    {
+                        Console.WriteLine($"\n[!] WARNING: You are currently running as SYSTEM. You may want to use the /machine argument to use the machine account instead.");
+                    }
+
                     subjectName = GetCurrentUserDN();
                     Console.WriteLine($"[*] No subject name specified, using current context as subject.");
                 }
