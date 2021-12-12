@@ -97,6 +97,7 @@
     <Compile Include="Domain\EnterpriseCertificateAuthority.cs" />
     <Compile Include="Domain\PKIObject.cs" />
     <Compile Include="Info.cs" />
+    <Compile Include="Lib\CertConverter.cs" />
     <Compile Include="Lib\HttpUtil.cs" />
     <Compile Include="Lib\LdapSearchOptions.cs" />
     <Compile Include="Version.cs" />

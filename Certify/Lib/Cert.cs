@@ -151,8 +151,19 @@ namespace Certify
             if (String.IsNullOrEmpty(signerCertPath))
                 throw new Exception("signerCertPath is empty");
 
-            if (!File.Exists(signerCertPath))
-                throw new Exception($"signerCertPath '{signerCertPath}' doesn't exist!");
+            byte[] certBytes;
+
+            if (CertConverter.IsBase64String(signerCertPath))
+            {
+                certBytes = Convert.FromBase64String(signerCertPath);
+            }
+            else
+            {
+                if (!File.Exists(signerCertPath))
+                    throw new Exception($"signerCertPath '{signerCertPath}' doesn't exist!");
+
+                certBytes = File.ReadAllBytes(signerCertPath);
+            }
 
             Console.WriteLine($"\r\n[*] Template                : {templateName}");
             Console.WriteLine($"[*] On Behalf Of            : {onBehalfUser}");
@@ -183,7 +194,7 @@ namespace Certify
             string base64request;
             try
             {
-                cert = new X509Certificate2(signerCertPath, signerCertPassword);
+                cert = new X509Certificate2(certBytes, signerCertPassword);
 
                 // temporarily add this cert to the local user store so we can sign the request
                 var store = new X509Store(StoreName.My);
@@ -300,7 +311,7 @@ namespace Certify
 
 
         // request a user/machine certificate
-        public static void RequestCert(string CA, bool machineContext = false, string templateName = "User", string subject = "", string altName = "", bool install = false)
+        public static void RequestCert(string CA, bool machineContext = false, string templateName = "User", string subject = "", string altName = "", bool install = false, bool pfx = false, string password = "Password123!", bool nowrap = false)
         {
             if (machineContext && !WindowsIdentity.GetCurrent().IsSystem)
             {
@@ -334,8 +345,15 @@ namespace Certify
                 return;
             }
 
-            Console.WriteLine($"\r\n[*] cert.pem         :\r\n");
-            Console.Write(csr.PrivateKeyPem);
+            if (pfx)
+            {
+                Console.WriteLine($"\r\n[*] cert.pfx         :\r\n");
+            }
+            else
+            {
+                Console.WriteLine($"\r\n[*] cert.pem         :\r\n");
+                Console.Write(csr.PrivateKeyPem);
+            }
 
             // download the certificate from the CA
             try
@@ -344,20 +362,28 @@ namespace Certify
                     ? DownloadAndInstallCert(CA, requestID, X509CertificateEnrollmentContext.ContextUser)
                     : DownloadCert(CA, requestID);
 
-                Console.WriteLine(certPemString);
+                if (pfx)
+                {
+                    var pfxString = CertConverter.GetPfxFromPemString(csr.PrivateKeyPem, certPemString, password, nowrap);
+                    Console.WriteLine(pfxString);
+                    Console.WriteLine("\r\n[*] Password for PFX: {0}\r\n", password);
+                }
+                else
+                {
+                    Console.WriteLine(certPemString);
+                    Console.WriteLine(
+                        "\r\n[*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx\r\n");
+                }
             }
             catch (Exception e)
             {
                 Console.WriteLine("\r\n[X] Error downloading certificate: " + e.Message);
             }
-
-            Console.WriteLine(
-                    "\r\n[*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx\r\n");
         }
 
 
         // request a certificate on behalf of another user
-        public static void RequestCertOnBehalf(string CA, string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false)
+        public static void RequestCertOnBehalf(string CA, string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false, bool pfx = false, string password = "Password123!", bool nowrap = false)
         {
             if (machineContext && !WindowsIdentity.GetCurrent().IsSystem)
             {
@@ -396,11 +422,21 @@ namespace Certify
                 var certPemString = DownloadCert(CA, requestID);
 
                 // if successful, display everything
-                Console.WriteLine($"\r\n[*] cert.pem         :\r\n");
-                Console.Write(csr.PrivateKeyPem);
-                Console.WriteLine(certPemString);
-                Console.WriteLine(
-                    "\r\n[*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx\r\n");
+                if (pfx)
+                {
+                    Console.WriteLine($"\r\n[*] cert.pfx         :\r\n");
+                    var pfxString = CertConverter.GetPfxFromPemString(csr.PrivateKeyPem, certPemString, password, nowrap);
+                    Console.WriteLine(pfxString);
+                    Console.WriteLine("\r\n[*] Password for PFX: {0}\r\n", password);
+                }
+                else
+                {
+                    Console.WriteLine($"\r\n[*] cert.pem         :\r\n");
+                    Console.Write(csr.PrivateKeyPem);
+                    Console.WriteLine(certPemString);
+                    Console.WriteLine(
+                        "\r\n[*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx\r\n");
+                }
             }
             catch (Exception e)
             {
