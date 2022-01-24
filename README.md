@@ -75,7 +75,7 @@ Certify is a C# tool to enumerate and abuse misconfigurations in Active Director
 
         Certify.exe setconfig /ca:SERVER\ca-name /enablesan [/removeapproval] [/restart]
 
-      Remove the need for administrator approval at the time of requesting a new certificate:
+      Remove the mandatory approval at the time of requesting a new certificate:
 
         Certify.exe setconfig /ca:SERVER\ca-name /removeapproval [/enablesan] [/restart]
 
