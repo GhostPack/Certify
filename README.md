@@ -71,6 +71,15 @@ Certify is a C# tool to enumerate and abuse misconfigurations in Active Director
         Certify.exe pkiobjects [/domain:domain.local] [/showAdmins] [/quiet]
 
 
+      Flip the EDITF_ATTRIBUTESUBJECTALTNAME2 bit to allow SAN specification in any template:
+
+        Certify.exe setconfig /ca:SERVER\ca-name /enablesan [/removeapproval] [/restart]
+
+      Remove the need for administrator approval at the time of requesting a new certificate:
+
+        Certify.exe setconfig /ca:SERVER\ca-name /removeapproval [/enablesan] [/restart]
+
+
       Request a new certificate using the current user context:
 
         Certify.exe request /ca:SERVER\ca-name [/subject:X] [/template:Y] [/install]
@@ -86,6 +95,11 @@ Certify is a C# tool to enumerate and abuse misconfigurations in Active Director
       Request a new certificate on behalf of another user, using an enrollment agent certificate:
 
         Certify.exe request /ca:SERVER\ca-name /template:Y /onbehalfof:DOMAIN\USER /enrollcert:C:\Temp\enroll.pfx [/enrollcertpw:CERT_PASSWORD]
+
+
+      Issue a pending certificate:
+
+        Certify.exe issue /ca:SERVER\ca-name /id:X
 
 
       Download an already requested certificate:

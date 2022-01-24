@@ -58,6 +58,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Interop.CERTADMINLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>.\Interop.CERTADMINLib.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
     <Reference Include="Interop.CERTCLILib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <EmbedInteropTypes>True</EmbedInteropTypes>
@@ -68,10 +72,12 @@
       <EmbedInteropTypes>False</EmbedInteropTypes>
       <HintPath>.\Interop.CERTENROLLLib.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.DirectoryServices.AccountManagement" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -83,6 +89,8 @@
     <Compile Include="Commands\Download.cs" />
     <Compile Include="Commands\Find.cs" />
     <Compile Include="Commands\ICommand.cs" />
+    <Compile Include="Commands\Issue.cs" />
+    <Compile Include="Commands\SetConfig.cs" />
     <Compile Include="Commands\PKIObjects.cs" />
     <Compile Include="Commands\Request.cs" />
     <Compile Include="Domain\ADObject.cs" />
@@ -99,6 +107,7 @@
     <Compile Include="Info.cs" />
     <Compile Include="Lib\HttpUtil.cs" />
     <Compile Include="Lib\LdapSearchOptions.cs" />
+    <Compile Include="Lib\ModifyConfigEntry.cs" />
     <Compile Include="Version.cs" />
     <Compile Include="Lib\Cert.cs" />
     <Compile Include="Lib\DisplayUtil.cs" />
