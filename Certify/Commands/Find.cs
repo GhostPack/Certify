@@ -255,7 +255,7 @@ namespace Certify.Commands
             Console.WriteLine($"    Schema Version                        : {template.SchemaVersion}");
             Console.WriteLine($"    Validity Period                       : {template.ValidityPeriod}");
             Console.WriteLine($"    Renewal Period                        : {template.RenewalPeriod}");
-            Console.WriteLine($"    msPKI-Certificates-Name-Flag          : {template.CertificateNameFlag}");
+            Console.WriteLine($"    msPKI-Certificate-Name-Flag          : {template.CertificateNameFlag}");
             Console.WriteLine($"    mspki-enrollment-flag                 : {template.EnrollmentFlag}");
             Console.WriteLine($"    Authorized Signatures Required        : {template.AuthorizedSignatures}");
             if (template.RaApplicationPolicies != null && template.RaApplicationPolicies.Any())
