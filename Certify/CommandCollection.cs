@@ -24,7 +24,8 @@ namespace Certify
             _availableCommands.Add(PKIObjects.CommandName, () => new PKIObjects());
             _availableCommands.Add(SetConfig.CommandName, () => new SetConfig());
             _availableCommands.Add(Issue.CommandName, () => new Issue());
-
+            _availableCommands.Add(CoerceAuth.CommandName, () => new CoerceAuth());
+            _availableCommands.Add(WriteFile.CommandName, () => new WriteFile());
         }
 
         public bool ExecuteCommand(string commandName, Dictionary<string, string> arguments)

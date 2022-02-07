@@ -86,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\CAs.cs" />
+    <Compile Include="Commands\CoerceAuth.cs" />
     <Compile Include="Commands\Download.cs" />
     <Compile Include="Commands\Find.cs" />
     <Compile Include="Commands\ICommand.cs" />
@@ -93,6 +94,7 @@
     <Compile Include="Commands\SetConfig.cs" />
     <Compile Include="Commands\PKIObjects.cs" />
     <Compile Include="Commands\Request.cs" />
+    <Compile Include="Commands\WriteFile.cs" />
     <Compile Include="Domain\ADObject.cs" />
     <Compile Include="ArgumentParser.cs" />
     <Compile Include="ArgumentParserResult.cs" />
