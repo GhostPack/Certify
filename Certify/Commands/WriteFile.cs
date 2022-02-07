@@ -80,7 +80,7 @@ namespace Certify.Commands
         {
             var parsed = input.Replace("%","%%");
             parsed = parsed.Replace("\n", "%n").Replace("\r","%r");
-            parsed = parsed.Insert(0, "?");
+            parsed = parsed.Replace("\t", "%t");
 
             return parsed;
         }
