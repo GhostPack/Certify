@@ -19,6 +19,7 @@ namespace Certify.Commands
             var CA = "";
             var path = "";
             var input = "";
+            var read = false;
 
             if (arguments.ContainsKey("/ca"))
             {
@@ -41,7 +42,7 @@ namespace Certify.Commands
                 path = path.Replace("\\\\", "");
                 path = path.Replace("\\", "/");
             }
-            else
+            else if (!arguments.ContainsKey("/readonly"))
             {
                 Console.WriteLine("[X] A /path:Path where the file should be written is required!");
                 return;
@@ -63,19 +64,25 @@ namespace Certify.Commands
             else
             {
                 input = SelectDefaultInput(path);
-                if (input == "")
+                if (input == "" && !arguments.ContainsKey("/readonly"))
                 {
                     Console.WriteLine("[X] An input file must be specified!");
                     return;
                 }
             }
 
+            if (arguments.ContainsKey("/readonly"))
+            {
+                read = true;
+            }
+
             input = PrepareInput(input);
 
-            ModifyConfigEntry.WriteFile(CA, path, input);
+            ModifyConfigEntry.WriteFile(CA, path, input, read);
 
         }
 
+        // replace some special characters for their corresponding replacement token
         private string PrepareInput(string input)
         {
             var parsed = input.Replace("%","%%");

