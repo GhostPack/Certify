@@ -535,5 +535,23 @@ namespace Certify
         {
             return $"CN={System.Net.Dns.GetHostEntry("").HostName}";
         }
+
+        // issues a pending for approval certificate. ManageCertificates right required
+        public static void IssuePendingCertificate(string CA, int requestId)
+        {
+            CERTADMINLib.ICertAdmin2 objCertAdmin = new CERTADMINLib.CCertAdmin();
+
+            var result = objCertAdmin.ResubmitRequest(CA, requestId);
+
+            if (result == 3)
+            {
+                Console.WriteLine("\r\n[*] Certificate issued!");
+            }
+            else
+            {
+                Console.WriteLine("[X] Error issuing pending certificate.");
+
+            }
+        }
     }
 }
