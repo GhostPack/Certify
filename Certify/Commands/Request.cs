@@ -17,6 +17,9 @@ namespace Certify.Commands
             var template = "User";
             var machineContext = false;
             var install = false;
+            var pfx = false;
+            var password = "Password123!";
+            var nowrap = false;
 
             if (arguments.ContainsKey("/ca"))
             {
@@ -53,6 +56,21 @@ namespace Certify.Commands
                 install = true;
             }
 
+            if (arguments.ContainsKey("/pfx"))
+            {
+                pfx = true;
+            }
+
+            if (arguments.ContainsKey("/password"))
+            {
+                password = arguments["/password"];
+            }
+
+            if (arguments.ContainsKey("/nowrap"))
+            {
+                nowrap = true;
+            }
+
             if (arguments.ContainsKey("/computer") || arguments.ContainsKey("/machine"))
             {
                 if (template == "User")
@@ -80,11 +98,11 @@ namespace Certify.Commands
                     return;
                 }
 
-                Cert.RequestCertOnBehalf(CA, template, arguments["/onbehalfof"], arguments["/enrollcert"], enrollCertPassword, machineContext);
+                Cert.RequestCertOnBehalf(CA, template, arguments["/onbehalfof"], arguments["/enrollcert"], enrollCertPassword, machineContext, pfx, password, nowrap);
             }
             else
             {
-                Cert.RequestCert(CA, machineContext, template, subject, altName, install);
+                Cert.RequestCert(CA, machineContext, template, subject, altName, install, pfx, password, nowrap);
             }
         }
     }
