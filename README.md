@@ -103,7 +103,7 @@ Certificates can be transformed to .pfx's usable with Certify with:
 
     openssl pkcs12 -in cert.pem -keyex -CSP "Microsoft Enhanced Cryptographic Provider v1.0" -export -out cert.pfx
 
-The same can be done usig the Windows native tool `certutil.exe`:
+The same can be done usig the Windows native tool `certutil.exe` (with the keyfile named `cert.key`):
 
     certutil.exe -MergePFX cert.pem cert.pfx
 
