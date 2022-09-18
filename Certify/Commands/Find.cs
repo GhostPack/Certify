@@ -749,7 +749,8 @@ namespace Certify.Commands
                 template.ExtendedKeyUsage == null
                 || !template.ExtendedKeyUsage.Any() // No EKUs == Any Purpose
                 || template.ExtendedKeyUsage.Contains(CommonOids.AnyPurpose)
-                || template.ExtendedKeyUsage.Contains(CommonOids.CertificateRequestAgent);
+                || template.ExtendedKeyUsage.Contains(CommonOids.CertificateRequestAgent)
+                || template.ApplicationPolicies.Contains(CommonOids.CertificateRequestAgentPolicy);
 
             if (lowPrivilegedUsersCanEnroll && hasDangerousEku) return true;
 
