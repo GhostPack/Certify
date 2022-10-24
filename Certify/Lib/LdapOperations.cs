@@ -396,7 +396,7 @@ namespace Certify.Lib
 
         private msPKICertificateNameFlag? ParsePkiCertificateNameFlag(SearchResult sr)
         {
-            if (!sr.Properties.Contains("mspki-enrollment-flag"))
+            if (!sr.Properties.Contains("mspki-certificate-name-flag"))
                 return null;
 
             return ParseIntToEnum<msPKICertificateNameFlag>(sr.Properties["mspki-certificate-name-flag"][0].ToString());
