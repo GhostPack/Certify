@@ -8,6 +8,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using Certify.Lib;
+using System.Runtime.InteropServices;
 
 namespace Certify
 {
@@ -227,6 +228,9 @@ namespace Certify
                     string.Empty,
                     CA);
 
+            var status = objCertRequest.GetLastStatus();
+            var statusMessage = Marshal.GetExceptionForHR(status)?.Message;
+
             switch (iDisposition)
             {
                 case CR_DISP_ISSUED:
@@ -237,7 +241,7 @@ namespace Certify
                     break;
                 default:
                     Console.WriteLine("\r\n[!] CA Response             : The submission failed: {0}", objCertRequest.GetDispositionMessage());
-                    Console.WriteLine("[!] Last status             : 0x{0:X}", (uint)objCertRequest.GetLastStatus());
+                    Console.WriteLine($"[!] Last status             : 0x{status:X}. Message: {statusMessage}");
                     break;
             }
             return objCertRequest.GetRequestId();
