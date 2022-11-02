@@ -311,7 +311,6 @@ namespace Certify.Commands
             var ownerName = $"{GetUserSidString(ownerSid.ToString())}";
 
             var enrollmentPrincipals = new List<string>();
-            var autoEnrollmentPrincipals = new List<string>();
             var allExtendedRightsPrincipals = new List<string>();
             var fullControlPrincipals = new List<string>();
             var writeOwnerPrincipals = new List<string>();
@@ -331,15 +330,12 @@ namespace Certify.Commands
                 if ((rule.ActiveDirectoryRights & ActiveDirectoryRights.ExtendedRight) == ActiveDirectoryRights.ExtendedRight)
                 {
                     // 0e10c968-78fb-11d2-90d4-00c04f79dc55  ->  Certificates-Enrollment right
-                    // a05b8cc2-17bc-4802-a710-e7c15ab866a2  ->  Certificates-AutoEnrollment right
+                    // a05b8cc2-17bc-4802-a710-e7c15ab866a2  ->  Certificates-AutoEnrollment right (not acutally used during enrollment)
                     // 00000000-0000-0000-0000-000000000000  ->  all extended rights
                     switch ($"{rule.ObjectType}")
                     {
                         case "0e10c968-78fb-11d2-90d4-00c04f79dc55":
                             enrollmentPrincipals.Add(GetUserSidString(sid));
-                            break;
-                        case "a05b8cc2-17bc-4802-a710-e7c15ab866a2":
-                            autoEnrollmentPrincipals.Add(GetUserSidString(sid));
                             break;
                         case "00000000-0000-0000-0000-000000000000":
                             allExtendedRightsPrincipals.Add(GetUserSidString(sid));
@@ -375,16 +371,6 @@ namespace Certify.Commands
                     .ToList()
                     .ForEach(p => { sbEP.Append($"{p}\n                                      "); });
                 Console.WriteLine($"        Enrollment Rights           : {sbEP.ToString().Trim()}");
-            }
-
-            if (autoEnrollmentPrincipals.Count > 0)
-            {
-                var sbAEP = new StringBuilder();
-                autoEnrollmentPrincipals
-                    .OrderBy(p => p)
-                    .ToList()
-                    .ForEach(p => { sbAEP.Append($"{p}\n                                      "); });
-                Console.WriteLine($"        AutoEnrollment Rights       : {sbAEP.ToString().Trim()}");
             }
 
             if (allExtendedRightsPrincipals.Count > 0)
