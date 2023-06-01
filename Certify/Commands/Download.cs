@@ -10,7 +10,7 @@ namespace Certify.Commands
 
         public void Execute(Dictionary<string, string> arguments)
         {
-            Console.WriteLine("[*] Action: Download a Certificates");
+            Console.WriteLine("[*] Action: Download a Certificate");
 
             string CA;
             var install = arguments.ContainsKey("/install");
@@ -42,7 +42,7 @@ namespace Certify.Commands
                 return;
             }
 
-            Console.WriteLine($"[*] Certificates Authority   : {CA}");
+            Console.WriteLine($"[*] Certificate Authority   : {CA}");
             Console.WriteLine($"[*] Request ID              : {requestId}");
 
             // download the certificate from the CA
