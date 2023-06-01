@@ -306,7 +306,7 @@ namespace Certify
                 cert,
                 EncodingType.XCN_CRYPT_STRING_BASE64,
                 null);
-            Console.WriteLine("[*] Certificates installed!");
+            Console.WriteLine("[*] Certificate installed!");
 
             return outputStream.ToString();
         }

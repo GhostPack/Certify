@@ -9,7 +9,7 @@ namespace Certify.Commands
 
         public void Execute(Dictionary<string, string> arguments)
         {
-            Console.WriteLine("[*] Action: Request a Certificates");
+            Console.WriteLine("[*] Action: Request a Certificate");
 
             var CA = "";
             var subject = "";
@@ -76,7 +76,7 @@ namespace Certify.Commands
             {
                 if (!arguments.ContainsKey("/enrollcert") || String.IsNullOrEmpty(arguments["/enrollcert"]))
                 {
-                    Console.WriteLine("[X] /enrollcert parameter missing. Issued Enrollment/Certificates Request Agent certificate required!");
+                    Console.WriteLine("[X] /enrollcert parameter missing. Issued Enrollment/Certificate Request Agent certificate required!");
                     return;
                 }
 

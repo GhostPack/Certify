@@ -533,7 +533,7 @@ namespace Certify.Commands
 
         private void ShowAllTemplates(IEnumerable<CertificateTemplate> templates, IEnumerable<EnterpriseCertificateAuthority> cas)
         {
-            Console.WriteLine("\n[*] Available Certificates Templates :\n");
+            Console.WriteLine("\n[*] Available Certificate Templates :\n");
 
             foreach (var template in templates)
             {
@@ -577,8 +577,8 @@ namespace Certify.Commands
             }
 
             Console.WriteLine(!vulnerableTemplates.Any()
-                ? "\n[+] No Vulnerable Certificates Templates found!\n"
-                : "\n[!] Vulnerable Certificates Templates :\n");
+                ? "\n[+] No Vulnerable Certificate Templates found!\n"
+                : "\n[!] Vulnerable Certificate Templates :\n");
 
             foreach (var template in templates)
             {
