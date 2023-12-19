@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 
 namespace Certify.Lib
@@ -20,12 +20,21 @@ namespace Certify.Lib
             try
             {
                 using var response = (HttpWebResponse)request.GetResponse();
-                return response.StatusCode == HttpStatusCode.OK;
+                return response.StatusCode == HttpStatusCode.OK ||
+                       response.StatusCode == HttpStatusCode.Unauthorized ||
+                       response.StatusCode == HttpStatusCode.Forbidden;
             }
-            catch (WebException)
+            catch (WebException ex)
             {
+                // Check if the exception is due to Unauthorized (401) or Forbidden (403)
+                if (ex.Response is HttpWebResponse errorResponse)
+                {
+                    return errorResponse.StatusCode == HttpStatusCode.Unauthorized ||
+                           errorResponse.StatusCode == HttpStatusCode.Forbidden;
+                }
             }
 
+            // If there's an exception or the status code is not one of the expected ones, return false
             return false;
         }
     }
