@@ -18,6 +18,7 @@ namespace Certify.Commands
             var template = "User";
             var machineContext = false;
             var install = false;
+            var keySize = 2048;
 
             if (arguments.ContainsKey("/ca"))
             {
@@ -33,7 +34,22 @@ namespace Certify.Commands
                 Console.WriteLine("[X] A /ca:CA is required! (format SERVER\\CA-NAME)");
                 return;
             }
+            if (arguments.ContainsKey("/keysize"))
+            {
 
+                if (arguments["/keysize"].Equals("512") || arguments["/keysize"].Equals("1024") ||
+                    arguments["/keysize"].Equals("2048") || arguments["/keysize"].Equals("4096") )
+                {
+                    keySize = Int32.Parse(arguments["/keysize"]);
+                }
+                else
+                {
+                    Console.WriteLine("[X] /keysize must be either 512, 1024, 2048 (default) or 4096");
+                    return;
+                    
+                }
+                
+            }
             if (arguments.ContainsKey("/template"))
             {
                 template = arguments["/template"];
@@ -90,11 +106,11 @@ namespace Certify.Commands
                     return;
                 }
 
-                Cert.RequestCertOnBehalf(CA, template, arguments["/onbehalfof"], arguments["/enrollcert"], enrollCertPassword, machineContext);
+                Cert.RequestCertOnBehalf(CA, template, arguments["/onbehalfof"], arguments["/enrollcert"], enrollCertPassword, machineContext,keySize);
             }
             else
             {
-                Cert.RequestCert(CA, machineContext, template, subject, altName, sidExtension, install);
+                Cert.RequestCert(CA, machineContext, template, subject, altName, sidExtension, install,keySize);
             }
         }
     }
