@@ -42,7 +42,7 @@ namespace Certify
         }
 
         // create a certificate request message from a given enterprise template name
-        private static CertificateRequest CreateCertRequestMessage(string templateName, bool machineContext = false, string subjectName = "", string altName = "", string sidExtension = "")
+        private static CertificateRequest CreateCertRequestMessage(string templateName, bool machineContext = false, string subjectName = "", string altName = "", string sidExtension = "",int keySize= 2048)
         {
             if (String.IsNullOrEmpty(subjectName))
             {
@@ -74,7 +74,7 @@ namespace Certify
                 Console.WriteLine($"[*] SidExtension            : {sidExtension}");
             }
 
-            var privateKey = CreatePrivateKey(machineContext);
+            var privateKey = CreatePrivateKey(machineContext,keySize);
 
             // export the private key and transform it into a .pem
             var privateKeyBase64 = privateKey.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64);
@@ -138,14 +138,15 @@ namespace Certify
             return new CertificateRequest(base64request, privateKeyPEM);
         }
 
-        private static IX509PrivateKey CreatePrivateKey(bool machineContext)
+        private static IX509PrivateKey CreatePrivateKey(bool machineContext, int keySize)
         {
             var cspInfo = new CCspInformations();
             cspInfo.AddAvailableCsps();
 
             var privateKey = new CX509PrivateKey
             {
-                Length = 2048,
+                Length = keySize,
+                
                 KeySpec = X509KeySpec.XCN_AT_SIGNATURE,
                 KeyUsage = X509PrivateKeyUsageFlags.XCN_NCRYPT_ALLOW_ALL_USAGES,
                 MachineContext = machineContext,
@@ -159,7 +160,7 @@ namespace Certify
 
 
         // create a certificate request message from a given enterprise template name on behalf of another user
-        private static CertificateRequest CreateCertRequestOnBehalfMessage(string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false)
+        private static CertificateRequest CreateCertRequestOnBehalfMessage(string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false, int keySize = 2048)
         {
             if (String.IsNullOrEmpty(signerCertPath))
                 throw new Exception("signerCertPath is empty");
@@ -172,7 +173,7 @@ namespace Certify
 
             X509Certificate2? cert = null;
 
-            var privateKey = CreatePrivateKey(machineContext);
+            var privateKey = CreatePrivateKey(machineContext,keySize);
 
             // export the private key and transform it into a .pem
             var privateKeyBase64 = privateKey.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64);
@@ -313,19 +314,19 @@ namespace Certify
 
 
         // request a user/machine certificate
-        public static void RequestCert(string CA, bool machineContext = false, string templateName = "User", string subject = "", string altName = "", string sidExtension = "", bool install = false)
+        public static void RequestCert(string CA, bool machineContext = false, string templateName = "User", string subject = "", string altName = "", string sidExtension = "", bool install = false,int keySize =2048)
         {
             if (machineContext && !WindowsIdentity.GetCurrent().IsSystem)
             {
                 Console.WriteLine("[*] Elevating to SYSTEM context for machine cert request");
-                Elevator.GetSystem(() => RequestCert(CA, machineContext, templateName, subject, altName, sidExtension, install));
+                Elevator.GetSystem(() => RequestCert(CA, machineContext, templateName, subject, altName, sidExtension, install, keySize));
                 return;
             }
 
             var userName = WindowsIdentity.GetCurrent().Name;
             Console.WriteLine($"\r\n[*] Current user context    : {userName}");
 
-            var csr = CreateCertRequestMessage(templateName, machineContext, subject, altName, sidExtension);
+            var csr = CreateCertRequestMessage(templateName, machineContext, subject, altName, sidExtension,keySize);
 
 
             Console.WriteLine($"\r\n[*] Certificate Authority   : {CA}");
@@ -370,19 +371,19 @@ namespace Certify
 
 
         // request a certificate on behalf of another user
-        public static void RequestCertOnBehalf(string CA, string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false)
+        public static void RequestCertOnBehalf(string CA, string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false, int keySize = 2048 )
         {
             if (machineContext && !WindowsIdentity.GetCurrent().IsSystem)
             {
                 Console.WriteLine("[*] Elevating to SYSTEM context for machine cert request");
-                Elevator.GetSystem(() => RequestCertOnBehalf(CA, templateName, onBehalfUser, signerCertPath, signerCertPassword, machineContext));
+                Elevator.GetSystem(() => RequestCertOnBehalf(CA, templateName, onBehalfUser, signerCertPath, signerCertPassword, machineContext, keySize));
                 return;
             }
 
             var userName = WindowsIdentity.GetCurrent().Name;
             Console.WriteLine($"\r\n[*] Current user context    : {userName}");
 
-            var csr = CreateCertRequestOnBehalfMessage(templateName, onBehalfUser, signerCertPath, signerCertPassword, machineContext);
+            var csr = CreateCertRequestOnBehalfMessage(templateName, onBehalfUser, signerCertPath, signerCertPassword, machineContext,keySize);
 
             Console.WriteLine($"\r\n[*] Certificate Authority   : {CA}");
 

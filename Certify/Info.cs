@@ -67,6 +67,10 @@ namespace Certify
 
     Certify.exe request /ca:SERVER\ca-name /machine [/subject:X] [/template:Y] [/install]
 
+  Request a new certificate using the current machine context, specifying x509 key length:
+
+     Certify.exe request /ca:SERVER\ca-name /machine /keysize 4096 [/subject:X] [/template:Y] [/install]
+
   Request a new certificate using the current user context but for an alternate name (if supported):
 
     Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER
