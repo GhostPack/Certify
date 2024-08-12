@@ -14,6 +14,7 @@ namespace Certify.Commands
             var CA = "";
             var subject = "";
             var altName = "";
+            var url = "";
             var sidExtension = "";
             var template = "User";
             var machineContext = false;
@@ -47,6 +48,11 @@ namespace Certify.Commands
             if (arguments.ContainsKey("/altname"))
             {
                 altName = arguments["/altname"];
+            }
+
+            if (arguments.ContainsKey("/url"))
+            {
+                url = arguments["/url"];
             }
 
             if(arguments.ContainsKey("/sidextension"))
@@ -94,7 +100,7 @@ namespace Certify.Commands
             }
             else
             {
-                Cert.RequestCert(CA, machineContext, template, subject, altName, sidExtension, install);
+                Cert.RequestCert(CA, machineContext, template, subject, altName, url, sidExtension, install);
             }
         }
     }
