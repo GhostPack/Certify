@@ -42,7 +42,7 @@ namespace Certify
         }
 
         // create a certificate request message from a given enterprise template name
-        private static CertificateRequest CreateCertRequestMessage(string templateName, bool machineContext = false, string subjectName = "", string altName = "", string sidExtension = "")
+        private static CertificateRequest CreateCertRequestMessage(string templateName, bool machineContext = false, string subjectName = "", string altName = "", string url = "", string sidExtension = "")
         {
             if (String.IsNullOrEmpty(subjectName))
             {
@@ -68,6 +68,10 @@ namespace Certify
             if (!String.IsNullOrEmpty(altName))
             {
                 Console.WriteLine($"[*] AltName                 : {altName}");
+            }
+            if (!String.IsNullOrEmpty(url))
+            {
+                Console.WriteLine($"[*] URL                     : {url}");
             }
             if (!String.IsNullOrEmpty(sidExtension))
             {
@@ -111,16 +115,33 @@ namespace Certify
                 var altnames = new CX509ExtensionAlternativeNamesClass();
                 var name = new CAlternativeNameClass();
 
+                // Add the UPN (Principal Name) to the SAN extension
                 name.InitializeFromString(AlternativeNameType.XCN_CERT_ALT_NAME_USER_PRINCIPLE_NAME, altName);
                 names.Add(name);
+
+                // Add the URL to the SAN extension as a separate entry
+                if (!string.IsNullOrEmpty(url))
+                {
+                    var nameUrl = new CAlternativeNameClass();
+                    nameUrl.InitializeFromString(AlternativeNameType.XCN_CERT_ALT_NAME_URL, url);
+                    names.Add(nameUrl);
+                }
+
+                // format 2 - required for the EDITF_ATTRIBUTESUBJECTALTNAME2 scenario
                 altnames.InitializeEncode(names);
                 objPkcs10.X509Extensions.Add((CX509Extension)altnames);
 
-                // format 2 - required for the EDITF_ATTRIBUTESUBJECTALTNAME2 scenario
                 var altNamePair = new CX509NameValuePair();
-                altNamePair.Initialize("SAN", $"upn={altName}");
+                if (!string.IsNullOrEmpty(url))
+                {
+                    altNamePair.Initialize("SAN", $"upn={altName}&URL={url}");
+                }
+                else {
+                    altNamePair.Initialize("SAN", $"upn={altName}");
+                }
                 objPkcs10.NameValuePairs.Add(altNamePair);
 
+                // SID extension
                 if(!String.IsNullOrEmpty(sidExtension)) {
                     var extBytes = Certify.Lib.CertSidExtension.EncodeSidExtension(new SecurityIdentifier(sidExtension));
                     var oid = new CObjectId();
@@ -313,19 +334,19 @@ namespace Certify
 
 
         // request a user/machine certificate
-        public static void RequestCert(string CA, bool machineContext = false, string templateName = "User", string subject = "", string altName = "", string sidExtension = "", bool install = false)
+        public static void RequestCert(string CA, bool machineContext = false, string templateName = "User", string subject = "", string altName = "", string url = "", string sidExtension = "", bool install = false)
         {
             if (machineContext && !WindowsIdentity.GetCurrent().IsSystem)
             {
                 Console.WriteLine("[*] Elevating to SYSTEM context for machine cert request");
-                Elevator.GetSystem(() => RequestCert(CA, machineContext, templateName, subject, altName, sidExtension, install));
+                Elevator.GetSystem(() => RequestCert(CA, machineContext, templateName, subject, altName, url, sidExtension, install));
                 return;
             }
 
             var userName = WindowsIdentity.GetCurrent().Name;
             Console.WriteLine($"\r\n[*] Current user context    : {userName}");
 
-            var csr = CreateCertRequestMessage(templateName, machineContext, subject, altName, sidExtension);
+            var csr = CreateCertRequestMessage(templateName, machineContext, subject, altName, url, sidExtension);
 
 
             Console.WriteLine($"\r\n[*] Certificate Authority   : {CA}");

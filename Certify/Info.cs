@@ -70,7 +70,15 @@ namespace Certify
   Request a new certificate using the current user context but for an alternate name (if supported):
 
     Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER
-    
+
+  Request a new certificate using the current user context but for an alternate name and SID (if supported):
+
+    Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER /sid:S-1-5-21-2697957641-2271029196-387917394-2136
+
+  Request a new certificate using the current user context but for an alternate name and URL (if supported):
+
+    Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER /url:tag:microsoft.com,2022-09-14:sid:S-1-5-21-2697957641-2271029196-387917394-2136
+
   Request a new certificate on behalf of another user, using an enrollment agent certificate:
     
     Certify.exe request /ca:SERVER\ca-name /template:Y /onbehalfof:DOMAIN\USER /enrollcert:C:\Temp\enroll.pfx [/enrollcertpw:CERT_PASSWORD]
