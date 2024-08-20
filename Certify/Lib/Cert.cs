@@ -387,6 +387,7 @@ namespace Certify
 
             Console.WriteLine(
                     "\r\n[*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx\r\n");
+                    "\r\n[*] or (with the keyfile named cert.key): certutil.exe -MergePFX cert.pem cert.pfx");
         }
 
 
@@ -435,6 +436,7 @@ namespace Certify
                 Console.WriteLine(certPemString);
                 Console.WriteLine(
                     "\r\n[*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx\r\n");
+                    "\r\n[*] or (with the keyfile named cert.key): certutil.exe -MergePFX cert.pem cert.pfx");
             }
             catch (Exception e)
             {
