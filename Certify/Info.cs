@@ -71,6 +71,10 @@ namespace Certify
 
     Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER
 
+  Request a new certificate using the current user context but for an alternate name (if supported), specifying a ldapserver your own subjectname:
+
+    Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER /ldapserver:IP-Address /subject:DN-Format
+
   Request a new certificate using the current user context but for an alternate name and SID (if supported):
 
     Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER /sid:S-1-5-21-2697957641-2271029196-387917394-2136
@@ -82,8 +86,7 @@ namespace Certify
   Request a new certificate on behalf of another user, using an enrollment agent certificate:
     
     Certify.exe request /ca:SERVER\ca-name /template:Y /onbehalfof:DOMAIN\USER /enrollcert:C:\Temp\enroll.pfx [/enrollcertpw:CERT_PASSWORD]
-
-
+    
   Download an already requested certificate:
 
     Certify.exe download /ca:SERVER\ca-name /id:X [/install] [/machine]
