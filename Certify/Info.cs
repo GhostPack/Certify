@@ -71,7 +71,7 @@ namespace Certify
 
     Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER
 
-  Request a new certificate using the current user context but for an alternate name (if supported), specifying a ldapserver your own subjectname:
+  Request a new certificate using the current user context but for an alternate name (if supported), specifying a ldapserver your own subject name:
 
     Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER /ldapserver:IP-Address /subject:DN-Format
 
