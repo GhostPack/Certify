@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Certify.Commands
 {
@@ -14,11 +15,11 @@ namespace Certify.Commands
             var CA = "";
             var subject = "";
             var altName = "";
-            var url = "";
             var sidExtension = "";
             var template = "User";
             var machineContext = false;
             var install = false;
+            var appid = new string[0];
 
             if (arguments.ContainsKey("/ca"))
             {
@@ -50,11 +51,6 @@ namespace Certify.Commands
                 altName = arguments["/altname"];
             }
 
-            if (arguments.ContainsKey("/url"))
-            {
-                url = arguments["/url"];
-            }
-
             if(arguments.ContainsKey("/sidextension"))
             {
                 sidExtension = arguments["/sidextension"];
@@ -78,6 +74,11 @@ namespace Certify.Commands
                 machineContext = true;
             }
 
+            if (arguments.ContainsKey("/appid"))
+            {
+                appid = arguments["/appid"].Split(',').Select(oid => oid.Trim()).ToArray();
+            }
+
             if (arguments.ContainsKey("/onbehalfof"))
             {
                 if (!arguments.ContainsKey("/enrollcert") || String.IsNullOrEmpty(arguments["/enrollcert"]))
@@ -96,11 +97,11 @@ namespace Certify.Commands
                     return;
                 }
 
-                Cert.RequestCertOnBehalf(CA, template, arguments["/onbehalfof"], arguments["/enrollcert"], enrollCertPassword, machineContext);
+                Cert.RequestCertOnBehalf(CA, template, arguments["/onbehalfof"], arguments["/enrollcert"], enrollCertPassword, machineContext, appid);
             }
             else
             {
-                Cert.RequestCert(CA, machineContext, template, subject, altName, url, sidExtension, install);
+                Cert.RequestCert(CA, machineContext, template, subject, altName, sidExtension, install, appid);
             }
         }
     }
