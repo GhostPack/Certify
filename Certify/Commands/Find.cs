@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Linq;
@@ -728,8 +728,7 @@ namespace Certify.Commands
                 template.ExtendedKeyUsage.Contains(CommonOids.PKINITClientAuthentication));
 
             if (lowPrivilegedUsersCanEnroll && enrolleeSuppliesSubject && hasAuthenticationEku) return true;
-
-
+                     
             // Check 6) If a low priv'ed user can request a cert with any of these EKUs (or no EKU), then privilege escalation is possible
             var hasDangerousEku =
                 template.ExtendedKeyUsage == null
@@ -749,6 +748,12 @@ namespace Certify.Commands
             if((((msPKICertificateNameFlag)template.CertificateNameFlag).HasFlag(msPKICertificateNameFlag.SUBJECT_ALT_REQUIRE_DNS)
                 || ((msPKICertificateNameFlag)template.CertificateNameFlag).HasFlag(msPKICertificateNameFlag.SUBJECT_REQUIRE_DNS_AS_CN))
                 && ((msPKIEnrollmentFlag)template.EnrollmentFlag).HasFlag(msPKIEnrollmentFlag.NO_SECURITY_EXTENSION)) {
+                return true;
+            }
+
+            // Check 8) If a low priv'd user can request a cert with ENROLLEE_SUPPLIES_SUBJECT and Schema Version is 1.
+            if (lowPrivilegedUsersCanEnroll && enrolleeSuppliesSubject && template.SchemaVersion == 1)
+            {
                 return true;
             }
 
