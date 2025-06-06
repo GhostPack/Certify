@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.DirectoryServices.AccountManagement;
 using CERTENROLLLib;
 using CERTCLILib;
@@ -42,7 +42,7 @@ namespace Certify
         }
 
         // create a certificate request message from a given enterprise template name
-        private static CertificateRequest CreateCertRequestMessage(string templateName, bool machineContext = false, string subjectName = "", string altName = "", string url = "", string sidExtension = "")
+        private static CertificateRequest CreateCertRequestMessage(string templateName, bool machineContext = false, string subjectName = "", string altName = "", string sidExtension = "", string[] appid = null)
         {
             if (String.IsNullOrEmpty(subjectName))
             {
@@ -68,10 +68,6 @@ namespace Certify
             if (!String.IsNullOrEmpty(altName))
             {
                 Console.WriteLine($"[*] AltName                 : {altName}");
-            }
-            if (!String.IsNullOrEmpty(url))
-            {
-                Console.WriteLine($"[*] URL                     : {url}");
             }
             if (!String.IsNullOrEmpty(sidExtension))
             {
@@ -115,33 +111,16 @@ namespace Certify
                 var altnames = new CX509ExtensionAlternativeNamesClass();
                 var name = new CAlternativeNameClass();
 
-                // Add the UPN (Principal Name) to the SAN extension
                 name.InitializeFromString(AlternativeNameType.XCN_CERT_ALT_NAME_USER_PRINCIPLE_NAME, altName);
                 names.Add(name);
-
-                // Add the URL to the SAN extension as a separate entry
-                if (!string.IsNullOrEmpty(url))
-                {
-                    var nameUrl = new CAlternativeNameClass();
-                    nameUrl.InitializeFromString(AlternativeNameType.XCN_CERT_ALT_NAME_URL, url);
-                    names.Add(nameUrl);
-                }
-
-                // format 2 - required for the EDITF_ATTRIBUTESUBJECTALTNAME2 scenario
                 altnames.InitializeEncode(names);
                 objPkcs10.X509Extensions.Add((CX509Extension)altnames);
 
+                // format 2 - required for the EDITF_ATTRIBUTESUBJECTALTNAME2 scenario
                 var altNamePair = new CX509NameValuePair();
-                if (!string.IsNullOrEmpty(url))
-                {
-                    altNamePair.Initialize("SAN", $"upn={altName}&URL={url}");
-                }
-                else {
-                    altNamePair.Initialize("SAN", $"upn={altName}");
-                }
+                altNamePair.Initialize("SAN", $"upn={altName}");
                 objPkcs10.NameValuePairs.Add(altNamePair);
 
-                // SID extension
                 if(!String.IsNullOrEmpty(sidExtension)) {
                     var extBytes = Certify.Lib.CertSidExtension.EncodeSidExtension(new SecurityIdentifier(sidExtension));
                     var oid = new CObjectId();
@@ -149,6 +128,68 @@ namespace Certify
                     var sidExt = new CX509Extension();
                     sidExt.Initialize(oid, EncodingType.XCN_CRYPT_STRING_BASE64, Convert.ToBase64String(extBytes));
                     objPkcs10.X509Extensions.Add(sidExt);
+                }
+            }
+
+            if (appid != null && appid.Length > 0)
+            {
+                Console.WriteLine($"[*] Application Policies    : {string.Join(", ", appid)}");
+                int appPolicyIndex = -1;
+                for (int i = 0; i < objPkcs10.X509Extensions.Count; i++)
+                {
+                    var extension = objPkcs10.X509Extensions[i];
+                    if (extension.ObjectId.Value == "1.3.6.1.4.1.311.21.10") // Application Policies OID
+                    {
+                        appPolicyIndex = i;
+                        break;
+                    }
+                }
+
+                var policies = new CCertificatePolicies();
+                foreach (var oid in appid)
+                {
+                    if (!String.IsNullOrEmpty(oid))
+                    {
+                        var policy = new CCertificatePolicy();
+                        var objectId = new CObjectId();
+                        try
+                        {
+                            objectId.InitializeFromValue(oid);
+                            policy.Initialize(objectId);
+                            policies.Add(policy);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[!] Invalid OID {oid}: {ex.Message}");
+                            throw;
+                        }
+                    }
+                }
+
+                var policyExtension = new CX509ExtensionMSApplicationPolicies();
+
+                if (appPolicyIndex >= 0)
+                {
+                    try
+                    {
+                        objPkcs10.X509Extensions.Remove(appPolicyIndex);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[!] Error removing existing Application Policies");
+                        throw;
+                    }
+                }
+
+                try
+                {
+                    policyExtension.InitializeEncode(policies);
+                    objPkcs10.X509Extensions.Add((CX509Extension)policyExtension);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[!] Error adding Appplication Policies extension: {ex.Message}");
+                    throw;
                 }
             }
 
@@ -180,7 +221,7 @@ namespace Certify
 
 
         // create a certificate request message from a given enterprise template name on behalf of another user
-        private static CertificateRequest CreateCertRequestOnBehalfMessage(string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false)
+        private static CertificateRequest CreateCertRequestOnBehalfMessage(string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false, string[] appid = null)
         {
             if (String.IsNullOrEmpty(signerCertPath))
                 throw new Exception("signerCertPath is empty");
@@ -206,6 +247,70 @@ namespace Certify
                 : X509CertificateEnrollmentContext.ContextUser;
 
             objPkcs10.InitializeFromPrivateKey(context, privateKey, templateName);
+
+            if (appid != null && appid.Length > 0)
+            {
+                Console.WriteLine($"[*] Application Policies    : {string.Join(", ", appid)}");
+
+                int appPolicyIndex = -1;
+                for (int i = 0; i < objPkcs10.X509Extensions.Count; i++)
+                {
+                    var extension = objPkcs10.X509Extensions[i];
+                    if (extension.ObjectId.Value == "1.3.6.1.4.1.311.21.10") // Application Policies OID
+                    {
+                        appPolicyIndex = i;
+                        break;
+                    }
+                }
+
+                var policies = new CCertificatePolicies();
+                foreach (var oid in appid)
+                {
+                    if (!String.IsNullOrEmpty(oid))
+                    {
+                        var policy = new CCertificatePolicy();
+                        var objectId = new CObjectId();
+                        try
+                        {
+                            objectId.InitializeFromValue(oid);
+                            policy.Initialize(objectId);
+                            policies.Add(policy);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[!] Invalid OID {oid}: {ex.Message}");
+                            throw;
+                        }
+                    }
+                }
+
+                var policyExtension = new CX509ExtensionMSApplicationPolicies();
+
+                if (appPolicyIndex >= 0)
+                {
+                    try
+                    {
+                        objPkcs10.X509Extensions.Remove(appPolicyIndex);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[!] Error removing existing Application Policies");
+                        throw;
+                    }
+                }
+
+                try
+                {
+                    policyExtension.InitializeEncode(policies);
+                    objPkcs10.X509Extensions.Add((CX509Extension)policyExtension);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[!] Error adding Appplication Policies extension: {ex.Message}");
+                    throw;
+                }
+            }
+
             objPkcs10.Encode();
 
             var pkcs7 = new CX509CertificateRequestPkcs7();
@@ -334,19 +439,19 @@ namespace Certify
 
 
         // request a user/machine certificate
-        public static void RequestCert(string CA, bool machineContext = false, string templateName = "User", string subject = "", string altName = "", string url = "", string sidExtension = "", bool install = false)
+        public static void RequestCert(string CA, bool machineContext = false, string templateName = "User", string subject = "", string altName = "", string sidExtension = "", bool install = false, string[] appid = null)
         {
             if (machineContext && !WindowsIdentity.GetCurrent().IsSystem)
             {
                 Console.WriteLine("[*] Elevating to SYSTEM context for machine cert request");
-                Elevator.GetSystem(() => RequestCert(CA, machineContext, templateName, subject, altName, url, sidExtension, install));
+                Elevator.GetSystem(() => RequestCert(CA, machineContext, templateName, subject, altName, sidExtension, install));
                 return;
             }
 
             var userName = WindowsIdentity.GetCurrent().Name;
             Console.WriteLine($"\r\n[*] Current user context    : {userName}");
 
-            var csr = CreateCertRequestMessage(templateName, machineContext, subject, altName, url, sidExtension);
+            var csr = CreateCertRequestMessage(templateName, machineContext, subject, altName, sidExtension, appid);
 
 
             Console.WriteLine($"\r\n[*] Certificate Authority   : {CA}");
@@ -386,12 +491,12 @@ namespace Certify
             }
 
             Console.WriteLine(
-                    "\r\n[*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx\r\n");
+                    "\r\n[*] Convert with: openssl pkcs12 -legacy{sometimes} -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx\r\n");
         }
 
 
         // request a certificate on behalf of another user
-        public static void RequestCertOnBehalf(string CA, string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false)
+        public static void RequestCertOnBehalf(string CA, string templateName, string onBehalfUser, string signerCertPath, string signerCertPassword, bool machineContext = false, string[] appid = null)
         {
             if (machineContext && !WindowsIdentity.GetCurrent().IsSystem)
             {
