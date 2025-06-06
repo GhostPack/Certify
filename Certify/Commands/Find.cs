@@ -752,7 +752,7 @@ namespace Certify.Commands
             }
 
             // Check 8) If a low priv'd user can request a cert with ENROLLEE_SUPPLIES_SUBJECT and Schema Version is 1.
-            if (lowPrivilegedUsersCanEnroll && enrolleeSuppliesSubject && template.SchemaVersion == 1)
+            if (lowPrivilegedUsersCanEnroll && enrolleeSuppliesSubject && !requiresManagerApproval && template.SchemaVersion == 1)
             {
                 return true;
             }
