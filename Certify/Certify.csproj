@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{64524CA5-E4D0-41B3-ACC3-3BDBEFD40C97}</ProjectGuid>
+    <ProjectGuid>{15CFADD8-5F6C-424B-81DC-C028312D025F}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Certify</RootNamespace>
     <AssemblyName>Certify</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -29,9 +29,6 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <LangVersion>8.0</LangVersion>
-    <Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -43,80 +40,91 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>8.0</LangVersion>
-    <Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>0</WarningLevel>
+    <WarningLevel>4</WarningLevel>
     <LangVersion>8.0</LangVersion>
-    <Nullable>enable</Nullable>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Interop.CERTCLILib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-      <HintPath>.\Interop.CERTCLILib.dll</HintPath>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.9.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.1.8.9\lib\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
-    <Reference Include="Interop.CERTENROLLLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="CommandLine, Version=2.9.1.0, Culture=neutral, PublicKeyToken=5a870481e358d379, processorArchitecture=MSIL">
+      <HintPath>..\packages\CommandLineParser.2.9.1\lib\net461\CommandLine.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Interop.CERTCLILib">
+      <HintPath>.\Interop.CERTCLILib.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Interop.CERTENROLLLib">
       <HintPath>.\Interop.CERTENROLLLib.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.DirectoryServices.AccountManagement" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Commands\CAs.cs" />
-    <Compile Include="Commands\Download.cs" />
-    <Compile Include="Commands\Find.cs" />
-    <Compile Include="Commands\ICommand.cs" />
-    <Compile Include="Commands\PKIObjects.cs" />
-    <Compile Include="Commands\Request.cs" />
+    <Compile Include="Commands\ManageCa.cs" />
+    <Compile Include="Commands\ManageSelf.cs" />
+    <Compile Include="Commands\ManageTemplate.cs" />
+    <Compile Include="Commands\CertRequestDownload.cs" />
+    <Compile Include="Commands\CertRequestOnBehalf.cs" />
+    <Compile Include="Commands\CertRequestRenewal.cs" />
+    <Compile Include="Commands\EnumTemplates.cs" />
+    <Compile Include="Commands\CertForge.cs" />
+    <Compile Include="Commands\EnumPkiObjects.cs" />
+    <Compile Include="Commands\EnumCas.cs" />
+    <Compile Include="Commands\CertRequest.cs" />
     <Compile Include="Domain\ADObject.cs" />
-    <Compile Include="ArgumentParser.cs" />
-    <Compile Include="ArgumentParserResult.cs" />
-    <Compile Include="Domain\CertificateAuthorityWebServices.cs" />
-    <Compile Include="Domain\CommonOids.cs" />
-    <Compile Include="Domain\CertificateTemplate.cs" />
     <Compile Include="Domain\CertificateAuthority.cs" />
-    <Compile Include="CommandCollection.cs" />
+    <Compile Include="Domain\CertificateAuthorityWebServices.cs" />
+    <Compile Include="Domain\CertificateTemplate.cs" />
+    <Compile Include="Domain\CommonOids.cs" />
     <Compile Include="Domain\EnrollmentAgentRestriction.cs" />
-    <Compile Include="Domain\EnterpriseCertificateAuthority.cs" />
+    <Compile Include="Domain\CertificateAuthorityEnterprise.cs" />
     <Compile Include="Domain\PKIObject.cs" />
-    <Compile Include="Info.cs" />
+    <Compile Include="Lib\CertEnrollment.cs" />
+    <Compile Include="Lib\CertAdmin.cs" />
     <Compile Include="Lib\CertSidExtension.cs" />
-    <Compile Include="Lib\HttpUtil.cs" />
-    <Compile Include="Lib\LdapSearchOptions.cs" />
-    <Compile Include="Version.cs" />
-    <Compile Include="Lib\Cert.cs" />
-    <Compile Include="Lib\DisplayUtil.cs" />
-    <Compile Include="Lib\Elevator.cs" />
-    <Compile Include="Lib\Interop.cs" />
+    <Compile Include="Util\CertTransformUtil.cs" />
+    <Compile Include="Util\DisplayUtil.cs" />
+    <Compile Include="Util\DistributedComUtil.cs" />
+    <Compile Include="Util\ElevationUtil.cs" />
+    <Compile Include="Util\HttpUtil.cs" />
     <Compile Include="Lib\LdapOperations.cs" />
+    <Compile Include="Lib\LdapParser.cs" />
+    <Compile Include="Util\SidUtil.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="ILMerge.props" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.7.2 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
       <Visible>False</Visible>
       <ProductName>.NET Framework 3.5 SP1</ProductName>

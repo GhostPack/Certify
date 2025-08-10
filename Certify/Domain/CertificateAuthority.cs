@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Certify.Domain
@@ -30,59 +29,36 @@ namespace Certify.Domain
 
     public class CertificateAuthority : ADObject, IDisposable
     {
-        public string? Name { get; }
-        public string? DomainName { get; }
+        public string Name { get; }
+        public string DomainName { get; }
 
-        public Guid? Guid { get; }
-        public PkiCertificateAuthorityFlags? Flags { get; }
-        public List<X509Certificate2>? Certificates { get; private set; }
+        public Guid Guid { get; }
+        public PkiCertificateAuthorityFlags Flags { get; }
+        public List<X509Certificate2> Certificates { get; }
 
-
-        private bool _disposed;
-        public CertificateAuthority(string distinguishedName, string? name, string? domainName, Guid? guid, PkiCertificateAuthorityFlags? flags, List<X509Certificate2>? certificates, ActiveDirectorySecurity? securityDescriptor)
-            : base(distinguishedName, securityDescriptor)
+        public CertificateAuthority(string dn, string name, string domain, Guid guid, PkiCertificateAuthorityFlags flags, 
+            List<X509Certificate2> certificates, ActiveDirectorySecurity security_descriptor) 
+            : base(dn, security_descriptor)
         {
             Name = name;
-            DomainName = domainName;
+            DomainName = domain;
+
             Guid = guid;
             Flags = flags;
             Certificates = certificates;
         }
 
-        ~CertificateAuthority()
-        {
-            Dispose(false);
-        }
-
         public void Dispose()
         {
-            Dispose(true);
-            // This object will be cleaned up by the Dispose method. 
-            // Therefore, you should call GC.SupressFinalize to 
-            // take this object off the finalization queue 
-            // and prevent finalization code for this object 
-            // from executing a second time.
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            // Check to see if Dispose has already been called. 
-            if (_disposed) return;
-
-            if (disposing)
+            if (Certificates != null)
             {
-                // Dispose managed resources.
+                foreach (var cert in Certificates)
+                    cert.Dispose();
 
-                // https://snede.net/the-most-dangerous-constructor-in-net/
-                if (Certificates != null && Certificates.Any())
-                {
-                    Certificates.ForEach(c => c.Reset());
-                    Certificates = new List<X509Certificate2>();
-                }
+                Certificates.Clear();
             }
 
-            _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

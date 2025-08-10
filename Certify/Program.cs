@@ -1,133 +1,177 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Certify.Commands;
+using Certify.Lib;
+using CommandLine;
+using CommandLine.Text;
+using System;
 using System.Diagnostics;
 using System.IO;
 
 namespace Certify
 {
-    public class Program
+    internal class DefaultOptions
     {
-        public static void FileExecute(string commandName, Dictionary<string, string> parsedArgs)
+        [Option("out-file", HelpText = "Redirect all output streams to a file (format: FILE-PATH)")]
+        public string OutFile { get; set; }
+
+        [Option("quiet", HelpText = "Omit printing the Certify logo")]
+        public bool Quiet { get; set; }
+    };
+
+    internal class Program
+    {
+        public static string Version { get; } = "2.0.0";
+
+        private static void ShowLogo()
         {
-            // execute w/ stdout/err redirected to a file
-
-            var file = parsedArgs["/outfile"];
-
-            var realStdOut = Console.Out;
-            var realStdErr = Console.Error;
-
-            using (var writer = new StreamWriter(file, false))
-            {
-                writer.AutoFlush = true;
-                Console.SetOut(writer);
-                Console.SetError(writer);
-
-                MainExecute(commandName, parsedArgs);
-
-                Console.Out.Flush();
-                Console.Error.Flush();
-            }
-            Console.SetOut(realStdOut);
-            Console.SetError(realStdErr);
+            Console.WriteLine();
+            Console.WriteLine(@"   _____          _   _  __          ");
+            Console.WriteLine(@"  / ____|        | | (_)/ _|         ");
+            Console.WriteLine(@" | |     ___ _ __| |_ _| |_ _   _    ");
+            Console.WriteLine(@" | |    / _ \ '__| __| |  _| | | |   ");
+            Console.WriteLine(@" | |___|  __/ |  | |_| | | | |_| |   ");
+            Console.WriteLine(@"  \_____\___|_|   \__|_|_|  \__, |   ");
+            Console.WriteLine(@"                             __/ |   ");
+            Console.WriteLine(@"                            |___./   ");
+            Console.WriteLine($"  v{Version}                         ");
+            Console.WriteLine();
         }
 
-        public static void MainExecute(string commandName, Dictionary<string, string> parsedArgs)
+        private static ParserResult<object> ParserInitialize(string[] args)
         {
-            // main execution logic
+            DistributedComUtil.Initialize();
+            DistributedComUtil.InitializeSecurity();
+
+            var parser = new Parser(settings =>
+            {
+                settings.AutoHelp = false;
+                settings.AutoVersion = false;
+                settings.HelpWriter = null;
+            });
+
+            return parser.ParseArguments<EnumCas.Options, EnumTemplates.Options, EnumPkiObjects.Options, CertRequest.Options, CertRequestOnBehalf.Options,
+                CertRequestDownload.Options, CertRequestRenewal.Options, CertForge.Options, ManageCa.Options, ManageTemplate.Options, ManageSelf.Options>(args);
+        }
+
+        private static int ParserFinalize(ParserResult<object> result)
+        {
+            return result.MapResult(
+                (EnumCas.Options opts) => EnumCas.Execute(opts),
+                (EnumTemplates.Options opts) => EnumTemplates.Execute(opts),
+                (EnumPkiObjects.Options opts) => EnumPkiObjects.Execute(opts),
+                (CertRequest.Options opts) => CertRequest.Execute(opts),
+                (CertRequestOnBehalf.Options opts) => CertRequestOnBehalf.Execute(opts),
+                (CertRequestDownload.Options opts) => CertRequestDownload.Execute(opts),
+                (CertRequestRenewal.Options opts) => CertRequestRenewal.Execute(opts),
+                (CertForge.Options opts) => CertForge.Execute(opts),
+                (ManageCa.Options opts) => ManageCa.Execute(opts),
+                (ManageTemplate.Options opts) => ManageTemplate.Execute(opts),
+                (ManageSelf.Options opts) => ManageSelf.Execute(opts),
+                errors =>
+                {
+                    var help_text = HelpText.AutoBuild(result, h => {
+                        h.AdditionalNewLineAfterOption = false;
+                        h.AutoVersion = false;
+                        h.AutoHelp = false;
+                        h.Copyright = string.Empty;
+                        h.Heading = string.Empty;
+                        h.MaximumDisplayWidth = 100;
+                        return HelpText.DefaultParsingErrorsHandler(result, h);
+                    }, e => e);
+
+                    Console.WriteLine(help_text);
+                    return 1;
+                }
+            );
+        }
+
+        private static void MainExecute(ParserResult<object> result, DefaultOptions opts)
+        {
             var sw = new Stopwatch();
             sw.Start();
 
-            if(!(parsedArgs.ContainsKey("/quiet") || parsedArgs.ContainsKey("/q") || parsedArgs.ContainsKey("/json")))
-                Info.ShowLogo();
+            if (opts != null && !opts.Quiet)
+                ShowLogo();
 
-            parsedArgs.Remove("/q");
-            parsedArgs.Remove("/quiet");
-
-            try
-            {
-                var commandFound = new CommandCollection().ExecuteCommand(commandName, parsedArgs);
-
-                // show the usage if no commands were found for the command name
-                if (commandFound == false)
-                    Info.ShowUsage();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("\r\n[!] Unhandled Certify exception:\r\n");
-                Console.WriteLine(e);
-            }
+            ParserFinalize(result);
 
             sw.Stop();
-            if(!parsedArgs.ContainsKey("/json"))
-                Console.WriteLine("\r\n\r\nCertify completed in " + sw.Elapsed);
+
+            Console.WriteLine();
+            Console.WriteLine("Certify completed in {0}", sw.Elapsed);
         }
 
-        public static string MainString(string command)
+        private static void FileExecute(ParserResult<object> result, DefaultOptions opts)
         {
-            // helper that executes an input string command and returns results as a string
-            //  useful for PSRemoting execution
+            var stdout = Console.Out;
+            var stderr = Console.Error;
 
-            var args = command.Split();
-
-            var parsed = ArgumentParser.Parse(args);
-            if (parsed.ParsedOk == false)
+            using (var sw = new StreamWriter(opts.OutFile, false) { AutoFlush = true })
             {
-                Info.ShowLogo();
-                Info.ShowUsage();
-                return "Error parsing arguments: ${command}";
+                try
+                {
+                    Console.SetOut(sw);
+                    Console.SetError(sw);
+
+                    MainExecute(result, opts);
+
+                    Console.Out.Flush();
+                    Console.Error.Flush();
+                }
+                finally
+                {
+                    Console.SetOut(stdout);
+                    Console.SetError(stderr);
+                }
             }
-
-            var commandName = args.Length != 0 ? args[0] : "";
-
-            var realStdOut = Console.Out;
-            var realStdErr = Console.Error;
-            TextWriter stdOutWriter = new StringWriter();
-            TextWriter stdErrWriter = new StringWriter();
-            Console.SetOut(stdOutWriter);
-            Console.SetError(stdErrWriter);
-
-            MainExecute(commandName, parsed.Arguments);
-
-            Console.Out.Flush();
-            Console.Error.Flush();
-            Console.SetOut(realStdOut);
-            Console.SetError(realStdErr);
-
-            var output = "";
-            output += stdOutWriter.ToString();
-            output += stdErrWriter.ToString();
-
-            return output;
         }
 
+        [MTAThread]
         public static void Main(string[] args)
         {
             try
             {
-                var parsed = ArgumentParser.Parse(args);
-                if (parsed.ParsedOk == false)
-                {
-                    Info.ShowLogo();
-                    Info.ShowUsage();
-                    return;
-                }
+                var result = ParserInitialize(args);
+                var opts = (DefaultOptions)result.Value;
 
-                var commandName = args.Length != 0 ? args[0] : "";
-
-                if (parsed.Arguments.ContainsKey("/outfile"))
-                {
-                    // redirect output to a file specified
-                    FileExecute(commandName, parsed.Arguments);
-                }
+                if (opts != null && !string.IsNullOrEmpty(opts.OutFile))
+                    FileExecute(result, opts);
                 else
-                {
-                    MainExecute(commandName, parsed.Arguments);
-                }
+                    MainExecute(result, opts);
             }
             catch (Exception e)
             {
-                Console.WriteLine("\r\n[!] Unhandled Certify exception:\r\n");
+                Console.WriteLine();
+                Console.WriteLine("[!] Unhandled Certify exception:");
+                Console.WriteLine();
                 Console.WriteLine(e);
+            }
+        }
+
+        [MTAThread]
+        public static string MainString(string args)
+        {
+            var stdout = Console.Out;
+            var stderr = Console.Error;
+
+            using (var sw = new StringWriter())
+            {
+                try
+                {
+                    Console.SetOut(sw);
+                    Console.SetError(sw);
+
+                    Main(args.Split());
+
+                    Console.Out.Flush();
+                    Console.Error.Flush();
+                }
+                finally
+                {
+                    Console.SetOut(stdout);
+                    Console.SetError(stderr);
+                }
+
+                return sw.ToString();
             }
         }
     }

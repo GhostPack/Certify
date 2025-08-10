@@ -5,11 +5,12 @@ namespace Certify.Domain
     public class ADObject
     {
         public string DistinguishedName { get; set; }
-        public ActiveDirectorySecurity? SecurityDescriptor { get; set; }
-        public ADObject(string distinguishedName, ActiveDirectorySecurity? securityDescriptor)
+        public ActiveDirectorySecurity SecurityDescriptor { get; set; }
+
+        public ADObject(string dn, ActiveDirectorySecurity security_descriptor)
         {
-            DistinguishedName = distinguishedName;
-            SecurityDescriptor = securityDescriptor;    
+            DistinguishedName = dn;
+            SecurityDescriptor = security_descriptor;
         }
     }
 }

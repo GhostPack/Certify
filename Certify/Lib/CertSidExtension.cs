@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
 using System.Text;
 
 // Directly from https://blog.qdsecurity.se/2022/05/27/manually-injecting-a-sid-in-a-certificate/
@@ -33,30 +32,35 @@ namespace Certify.Lib
         CRYPT_UNICODE_NAME_ENCODE_ENABLE_UTF8_UNICODE_FLAG = 0x20000000,
         CRYPT_UNICODE_NAME_ENCODE_FORCE_UTF8_UNICODE_FLAG = 0x10000000
     }
+
     [Flags]
     public enum CertEncodingType : int
     {
         X509 = 0x1,
         PKCS7 = 0x10000
     }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct CRYPT_BLOB
     {
         public int cbData;
         public IntPtr pbData;
     }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct CERT_ALT_NAME_INFO
     {
         public int cAltEntry;
         public IntPtr rgAltEntry;
     }
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct CERT_ALT_NAME_ENTRY
     {
         public CertAltNameType dwAltNameChoice;
         public CERT_ALT_NAME_ENTRY_UNION Value;
     }
+
     [StructLayout(LayoutKind.Explicit, CharSet = CharSet.Unicode)]
     public struct CERT_ALT_NAME_ENTRY_UNION
     {
@@ -75,6 +79,7 @@ namespace Certify.Lib
         [FieldOffset(0)]
         public IntPtr pszRegisteredID;
     }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct CERT_OTHER_NAME
     {
@@ -83,6 +88,7 @@ namespace Certify.Lib
         [MarshalAs(UnmanagedType.Struct)]
         public CRYPT_BLOB Value;
     }
+
     public static class CertSidExtension
     {
         [DllImport("Crypt32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -98,14 +104,14 @@ namespace Certify.Lib
             [MarshalAs(UnmanagedType.I4)]
             ref int pcbEncoded
         );
+
         public const string szOID_SUBJECT_ALT_NAME2 = "2.5.29.17";
 
-        public static byte[] EncodeSidExtension(SecurityIdentifier sid)
+        public static byte[] EncodeSidExtension(string sid)
         {
             if (sid == null)
                 throw new ArgumentNullException("sid");
 
-            var stringSid = sid.Value;
             var sidOid = "1.3.6.1.4.1.311.25.2.1";
             var unmanagedSidString = IntPtr.Zero;
             var unmanagedpOtherName = IntPtr.Zero;
@@ -115,7 +121,7 @@ namespace Certify.Lib
 
             try
             {
-                var sidLength = stringSid.Length;
+                var sidLength = sid.Length;
 
                 // The actual SID value needs to be encoded as an X.690 OCTET_STRING. Since this is somewhat tricky to do with P/Invoke,
                 // we just do it manually as the SID is never expected to exceed 127 characters, but verify it anyway.
@@ -126,7 +132,7 @@ namespace Certify.Lib
                 var octetString = new byte[sidLength + 2];
                 octetString[0] = 0x04; // Tag identifier for an OCTET_STRING
                 octetString[1] = (byte)sidLength; // Length of the OCTET_STRING value, in bytes
-                Array.Copy(Encoding.ASCII.GetBytes(stringSid), 0, octetString, 2, sidLength);
+                Array.Copy(Encoding.ASCII.GetBytes(sid), 0, octetString, 2, sidLength);
 
                 unmanagedSidString = Marshal.AllocHGlobal(octetString.Length);
                 Marshal.Copy(octetString, 0, unmanagedSidString, octetString.Length);
@@ -160,6 +166,7 @@ namespace Certify.Lib
 
                 int resultSize = 0;
                 var result = CryptEncodeObjectEx(CertEncodingType.X509, szOID_SUBJECT_ALT_NAME2, unmanagedAltNameInfo, 0, IntPtr.Zero, outputPtr, ref resultSize);
+
                 if (resultSize > 1)
                 {
                     outputPtr = Marshal.AllocHGlobal(resultSize);
@@ -168,30 +175,25 @@ namespace Certify.Lib
                     Marshal.Copy(outputPtr, output, 0, resultSize);
                     return output;
                 }
+
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
             finally
             {
                 if (unmanagedSidString != IntPtr.Zero)
-                {
                     Marshal.FreeHGlobal(unmanagedSidString);
-                }
+
                 if (unmanagedpOtherName != IntPtr.Zero)
-                {
                     Marshal.FreeHGlobal(unmanagedpOtherName);
-                }
+
                 if (unmanagedAltNameEntry != IntPtr.Zero)
-                {
                     Marshal.FreeHGlobal(unmanagedAltNameEntry);
-                }
+
                 if (unmanagedAltNameInfo != IntPtr.Zero)
-                {
                     Marshal.FreeHGlobal(unmanagedAltNameInfo);
-                }
+
                 if (outputPtr != IntPtr.Zero)
-                {
                     Marshal.FreeHGlobal(outputPtr);
-                }
             }
         }
     }
