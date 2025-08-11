@@ -44,8 +44,7 @@ namespace Certify
             string sid_extension, IEnumerable<string> application_policies, int key_size, bool machine_context)
         {
             var private_key = CreatePrivateKey(machine_context, key_size);
-            var private_key_b64 = private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64);
-            var private_key_pem = ConvertToPEM(private_key_b64);
+            var private_key_pem = ConvertToPEM(private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64));
 
             // construct the request for the template name specified
             var pkcs10 = new CX509CertificateRequestPkcs10();
@@ -92,8 +91,7 @@ namespace Certify
             List<string> application_policies, int key_size, bool machine_context = false)
         {
             var private_key = CreatePrivateKey(machine_context, key_size);
-            var private_key_b64 = private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64);
-            var private_key_pem = ConvertToPEM(private_key_b64);
+            var private_key_pem = ConvertToPEM(private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64));
 
             // construct the request for the template name specified
             var pkcs10 = new CX509CertificateRequestPkcs10();

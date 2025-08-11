@@ -57,11 +57,8 @@ namespace Certify.Commands
             [Option("esc6", Group = "Action", HelpText = "Enable/disable ESC6")]
             public bool ToggleCaSan { get; set; }
 
-            [Option("esc11-req", Group = "Action", HelpText = "Enable/disable ESC11 (for ICertRequest)")]
-            public bool ToggleRpcRequest { get; set; }
-
-            [Option("esc11-adm", Group = "Action", HelpText = "Enable/disable ESC11 (for ICertAdmin)")]
-            public bool ToggleRpcAdmin { get; set; }
+            [Option("esc11", Group = "Action", HelpText = "Enable/disable ESC11")]
+            public bool ToggleRpcEncryption { get; set; }
 
             [Option("esc16", Group = "Action", HelpText = "Enable/disable ESC16")]
             public bool ToggleNoExtension { get; set; }
@@ -326,7 +323,7 @@ namespace Certify.Commands
 
         private static void PerformFlagToggles(Options opts, string server, string authority)
         {
-            if (opts.ToggleCaSan || opts.ToggleRpcAdmin || opts.ToggleRpcRequest || opts.ToggleNoExtension)
+            if (opts.ToggleCaSan || opts.ToggleRpcEncryption || opts.ToggleNoExtension)
             {
                 if (opts.ToggleCaSan)
                 {
@@ -353,10 +350,10 @@ namespace Certify.Commands
                     }
                 }
 
-                if (opts.ToggleRpcAdmin || opts.ToggleRpcRequest)
+                if (opts.ToggleRpcEncryption)
                 {
                     Console.WriteLine();
-                    Console.WriteLine($"[*] Attempting to toggle IF_ENFORCEENCRYPTICERTREQUEST or IF_ENFORCEENCRYPTICERTADMIN (ESC11) on the CA.");
+                    Console.WriteLine($"[*] Attempting to toggle IF_ENFORCEENCRYPTICERTREQUEST (ESC11) on the CA.");
 
                     if (!CertAdmin.GetConfigEntry(server, authority, null, "InterfaceFlags", out int flags))
                         Console.WriteLine("[X] Failed to retrieve the InterfaceFlags configuration from the CA.");
@@ -364,27 +361,12 @@ namespace Certify.Commands
                     {
                         var flag_req = 0x00000200; // IF_ENFORCEENCRYPTICERTREQUEST
 
-                        if (opts.ToggleRpcRequest)
-                        {
-                            if ((flags & flag_req) != flag_req)
-                                Console.WriteLine("[*] The IF_ENFORCEENCRYPTICERTREQUEST flag is not set, toggling it on.");
-                            else
-                                Console.WriteLine("[*] The IF_ENFORCEENCRYPTICERTREQUEST flag is already set, toggling it off.");
+                        if ((flags & flag_req) != flag_req)
+                            Console.WriteLine("[*] The IF_ENFORCEENCRYPTICERTREQUEST flag is not set, toggling it on.");
+                        else
+                            Console.WriteLine("[*] The IF_ENFORCEENCRYPTICERTREQUEST flag is already set, toggling it off.");
                             
-                            flags ^= flag_req;
-                        }
-
-                        var flag_adm = 0x00000400; // IF_ENFORCEENCRYPTICERTADMIN
-
-                        if (opts.ToggleRpcAdmin)
-                        {
-                            if ((flags & flag_adm) != flag_adm)
-                                Console.WriteLine("[*] The IF_ENFORCEENCRYPTICERTADMIN flag is not set, toggling it on.");
-                            else
-                                Console.WriteLine("[*] The IF_ENFORCEENCRYPTICERTADMIN flag is already set, toggling it off.");
-                                
-                            flags ^= flag_adm;
-                        }
+                        flags ^= flag_req;
 
                         if (!CertAdmin.SetConfigEntry(server, authority, null, "InterfaceFlags", flags))
                             Console.WriteLine("[X] Failed to set the InterfaceFlags configuration on the CA.");
