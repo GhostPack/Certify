@@ -33,6 +33,9 @@ namespace Certify.Commands
             [Option("application-policy", HelpText = "Target application policy")]
             public IEnumerable<string> ApplicationPolicies { get; set; }
 
+            [Option("key-size", Default = 2048, HelpText = "Key size for the private key")]
+            public int KeySize { get; set; }
+
             [Option("machine", HelpText = "Request as the machine account")]
             public bool MachineContext { get; set; }
 
@@ -77,6 +80,12 @@ namespace Certify.Commands
                 }
             }
 
+            if (opts.KeySize != 512 && opts.KeySize != 1024 && opts.KeySize != 2048 && opts.KeySize != 4096)
+            {
+                Console.WriteLine("[X] The 'key size' parameter must be either 512, 1024, 2048 or 4096.");
+                return 1;
+            }
+
             RequestCertOnBehalf(opts, enrollment_cert_bytes);
             return 0;
         }
@@ -97,7 +106,7 @@ namespace Certify.Commands
                 Console.WriteLine($"[*] On Behalf Of            : {opts.TargetUser}");
 
                 var csr = CertEnrollment.CreateCertRequestOnBehalfMessage(opts.TemplateName, opts.TargetUser, enrollment_certificate, 
-                    opts.EnrollmentCertificatePassword, opts.ApplicationPolicies.ToList(), opts.MachineContext);
+                    opts.EnrollmentCertificatePassword, opts.ApplicationPolicies.ToList(), opts.KeySize, opts.MachineContext);
 
                 Console.WriteLine();
                 Console.WriteLine($"[*] Certificate Authority   : {opts.CertificateAuthority}");

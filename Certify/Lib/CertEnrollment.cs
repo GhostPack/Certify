@@ -41,9 +41,9 @@ namespace Certify
 
         // create a certificate request message from a given enterprise template name
         public static Tuple<string, string> CreateCertRequestMessage(string template_name, string subject_name, IEnumerable<Tuple<SubjectAltNameType, string>> subject_alt_names, 
-            string sid_extension, IEnumerable<string> application_policies, bool machine_context)
+            string sid_extension, IEnumerable<string> application_policies, int key_size, bool machine_context)
         {
-            var private_key = CreatePrivateKey(machine_context);
+            var private_key = CreatePrivateKey(machine_context, key_size);
             var private_key_b64 = private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64);
             var private_key_pem = ConvertToPEM(private_key_b64);
 
@@ -89,9 +89,9 @@ namespace Certify
 
         // create a certificate request message from a given enterprise template name on behalf of another user
         public static Tuple<string, string> CreateCertRequestOnBehalfMessage(string template_name, string on_behalf_user, byte[] signer_cert, string signer_cert_password,
-            List<string> application_policies, bool machine_context = false)
+            List<string> application_policies, int key_size, bool machine_context = false)
         {
-            var private_key = CreatePrivateKey(machine_context);
+            var private_key = CreatePrivateKey(machine_context, key_size);
             var private_key_b64 = private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64);
             var private_key_pem = ConvertToPEM(private_key_b64);
 
@@ -223,14 +223,14 @@ namespace Certify
             }
         }
 
-        private static IX509PrivateKey CreatePrivateKey(bool machine_context)
+        private static IX509PrivateKey CreatePrivateKey(bool machine_context, int key_size)
         {
             var csp_info = new CCspInformations();
             csp_info.AddAvailableCsps();
 
             var private_key = new CX509PrivateKey
             {
-                Length = 2048,
+                Length = key_size,
                 KeySpec = X509KeySpec.XCN_AT_SIGNATURE,
                 KeyUsage = X509PrivateKeyUsageFlags.XCN_NCRYPT_ALLOW_ALL_USAGES,
                 MachineContext = machine_context,
