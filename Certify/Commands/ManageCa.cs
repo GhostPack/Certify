@@ -11,6 +11,8 @@ using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text.RegularExpressions;
 
+#if !DISARMED
+
 namespace Certify.Commands
 {
     internal class ManageCa
@@ -436,3 +438,5 @@ namespace Certify.Commands
         }
     }
 }
+
+#endif

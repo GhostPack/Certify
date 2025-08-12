@@ -38,8 +38,11 @@ namespace Certify
 
         private static ParserResult<object> ParserInitialize(string[] args)
         {
+#if !DISARMED
+
             DistributedComUtil.Initialize();
             DistributedComUtil.InitializeSecurity();
+#endif
 
             var parser = new Parser(settings =>
             {
@@ -48,8 +51,22 @@ namespace Certify
                 settings.HelpWriter = null;
             });
 
-            return parser.ParseArguments<EnumCas.Options, EnumTemplates.Options, EnumPkiObjects.Options, CertRequest.Options, CertRequestOnBehalf.Options,
-                CertRequestDownload.Options, CertRequestRenewal.Options, CertForge.Options, ManageCa.Options, ManageTemplate.Options, ManageSelf.Options>(args);
+            return parser.ParseArguments<
+                EnumCas.Options, 
+                EnumTemplates.Options, 
+                EnumPkiObjects.Options
+#if !DISARMED
+                , 
+                CertRequest.Options, 
+                CertRequestOnBehalf.Options,
+                CertRequestDownload.Options,
+                CertRequestRenewal.Options, 
+                CertForge.Options, 
+                ManageCa.Options, 
+                ManageTemplate.Options, 
+                ManageSelf.Options
+#endif
+                >(args);
         }
 
         private static int ParserFinalize(ParserResult<object> result)
@@ -58,6 +75,7 @@ namespace Certify
                 (EnumCas.Options opts) => EnumCas.Execute(opts),
                 (EnumTemplates.Options opts) => EnumTemplates.Execute(opts),
                 (EnumPkiObjects.Options opts) => EnumPkiObjects.Execute(opts),
+#if !DISARMED
                 (CertRequest.Options opts) => CertRequest.Execute(opts),
                 (CertRequestOnBehalf.Options opts) => CertRequestOnBehalf.Execute(opts),
                 (CertRequestDownload.Options opts) => CertRequestDownload.Execute(opts),
@@ -66,6 +84,7 @@ namespace Certify
                 (ManageCa.Options opts) => ManageCa.Execute(opts),
                 (ManageTemplate.Options opts) => ManageTemplate.Execute(opts),
                 (ManageSelf.Options opts) => ManageSelf.Execute(opts),
+#endif
                 errors =>
                 {
                     var help_text = HelpText.AutoBuild(result, h => {

@@ -10,6 +10,9 @@ Global
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Disarmed|Any CPU = Disarmed|Any CPU
+		Disarmed|x64 = Disarmed|x64
+		Disarmed|x86 = Disarmed|x86
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
@@ -21,6 +24,12 @@ Global
 		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Debug|x64.Build.0 = Debug|Any CPU
 		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Debug|x86.Build.0 = Debug|Any CPU
+		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Disarmed|Any CPU.ActiveCfg = Disarm|Any CPU
+		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Disarmed|Any CPU.Build.0 = Disarm|Any CPU
+		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Disarmed|x64.ActiveCfg = Disarmed|Any CPU
+		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Disarmed|x64.Build.0 = Disarmed|Any CPU
+		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Disarmed|x86.ActiveCfg = Disarmed|Any CPU
+		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Disarmed|x86.Build.0 = Disarmed|Any CPU
 		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{15CFADD8-5F6C-424B-81DC-C028312D025F}.Release|x64.ActiveCfg = Release|Any CPU

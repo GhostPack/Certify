@@ -5,6 +5,8 @@ using System.Security.AccessControl;
 using System.Text;
 using Certify.Domain;
 
+#if !DISARMED
+
 namespace Certify.Lib
 {
     [StructLayout(LayoutKind.Sequential)]
@@ -506,3 +508,5 @@ namespace Certify.Lib
         }
     }
 }
+
+#endif

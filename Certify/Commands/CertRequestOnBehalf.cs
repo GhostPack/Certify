@@ -8,6 +8,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
+#if !DISARMED
+
 namespace Certify.Commands
 {
     internal class CertRequestOnBehalf
@@ -152,3 +154,5 @@ namespace Certify.Commands
         }
     }
 }
+
+#endif

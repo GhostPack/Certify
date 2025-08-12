@@ -7,6 +7,8 @@ using System.Text;
 //  Author: Carl Sörqvist
 //  No license
 
+#if !DISARMED
+
 namespace Certify.Lib
 {
     public enum CertAltNameType
@@ -198,3 +200,5 @@ namespace Certify.Lib
         }
     }
 }
+
+#endif

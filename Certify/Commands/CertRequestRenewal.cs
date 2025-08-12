@@ -7,6 +7,8 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 
+#if !DISARMED
+
 namespace Certify.Commands
 {
     internal class CertRequestRenewal
@@ -114,3 +116,5 @@ namespace Certify.Commands
         }
     }
 }
+
+#endif

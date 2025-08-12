@@ -8,6 +8,8 @@ using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
+#if !DISARMED
+
 namespace Certify.Commands
 {
     internal class ManageTemplate
@@ -292,3 +294,5 @@ namespace Certify.Commands
         }
     }
 }
+
+#endif

@@ -18,6 +18,8 @@ using Certify.Domain;
 using System.Collections.Generic;
 using CommandLine;
 
+#if !DISARMED
+
 namespace Certify.Commands
 {
     internal class CertForge
@@ -296,3 +298,5 @@ namespace Certify.Commands
         }
     }
 }
+
+#endif

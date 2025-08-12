@@ -10,6 +10,8 @@ using System.Threading;
 using System.Linq;
 using System.DirectoryServices.AccountManagement;
 
+#if !DISARMED
+
 namespace Certify.Commands
 {
     internal class CertRequest
@@ -207,3 +209,5 @@ namespace Certify.Commands
         }
     }
 }
+
+#endif

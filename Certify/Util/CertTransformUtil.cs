@@ -7,6 +7,8 @@ using System;
 using System.IO;
 using System.Linq;
 
+#if !DISARMED
+
 namespace Certify.Lib
 {
     internal class CertTransformUtil
@@ -145,3 +147,5 @@ namespace Certify.Lib
         }
     }
 }
+
+#endif

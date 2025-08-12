@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#if !DISARMED
+
 namespace Certify.Lib
 {
     internal class DistributedComUtil
@@ -111,3 +113,5 @@ namespace Certify.Lib
         }
     }
 }
+
+#endif

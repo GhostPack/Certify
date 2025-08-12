@@ -4,6 +4,8 @@ using CommandLine;
 using System;
 using System.Text;
 
+#if !DISARMED
+
 namespace Certify.Commands
 {
     internal class CertRequestDownload
@@ -99,3 +101,5 @@ namespace Certify.Commands
         }
     }
 }
+
+#endif

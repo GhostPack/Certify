@@ -1,15 +1,15 @@
 ﻿using System;
-using System.DirectoryServices.AccountManagement;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
 using System.Security.Cryptography;
-using System.Security.Principal;
 using Certify.Lib;
 using CERTENROLLLib;
 using CERTCLILib;
 using System.Collections.Generic;
 using System.Linq;
 using Certify.Domain;
+
+#if !DISARMED
 
 namespace Certify
 {
@@ -458,3 +458,5 @@ namespace Certify
         }
     }
 }
+
+#endif

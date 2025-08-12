@@ -3,6 +3,8 @@ using CommandLine;
 using System;
 using System.Runtime.InteropServices;
 
+#if !DISARMED
+
 namespace Certify.Commands
 {
     internal class ManageSelf
@@ -289,3 +291,5 @@ namespace Certify.Commands
         }
     }
 }
+
+#endif

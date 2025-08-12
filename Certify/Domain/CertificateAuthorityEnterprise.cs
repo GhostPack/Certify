@@ -310,12 +310,6 @@ namespace Certify.Domain
             };
             request.ServerCertificateValidationCallback += (sender, certificate, chain, errors) => true;
 
-            var handler = new HttpClientHandler
-            {
-                UseDefaultCredentials = false,
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            };
-
             try
             {
                 using (var response = (HttpWebResponse)request.GetResponse())
