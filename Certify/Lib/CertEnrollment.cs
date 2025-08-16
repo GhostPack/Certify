@@ -8,6 +8,7 @@ using CERTCLILib;
 using System.Collections.Generic;
 using System.Linq;
 using Certify.Domain;
+using Org.BouncyCastle.Asn1.Tsp;
 
 #if !DISARMED
 
@@ -47,13 +48,17 @@ namespace Certify
             var private_key_pem = ConvertToPEM(private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64));
 
             // construct the request for the template name specified
-            var pkcs10 = new CX509CertificateRequestPkcs10();
+            //var pkcs10 = new CX509CertificateRequestPkcs10();
+            IX509CertificateRequestPkcs10V3 pkcs10 = (IX509CertificateRequestPkcs10V3)Activator.CreateInstance(Type.GetTypeFromProgID("X509Enrollment.CX509CertificateRequestPkcs10"));
 
             if (machine_context)
-                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextMachine, private_key, template_name);
+                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextMachine, private_key, "");
             else
-                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextUser, private_key, template_name);
+                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextUser, private_key, "");
 
+            CX509ExtensionTemplateName objExtensionTemplate = new CX509ExtensionTemplateName();
+            objExtensionTemplate.InitializeEncode(template_name);
+            pkcs10.X509Extensions.Add((CX509Extension)objExtensionTemplate);
             var distinguished_name = new CX500DistinguishedName();
 
             try
@@ -226,16 +231,13 @@ namespace Certify
             var csp_info = new CCspInformations();
             csp_info.AddAvailableCsps();
 
-            var private_key = new CX509PrivateKey
-            {
-                Length = key_size,
-                KeySpec = X509KeySpec.XCN_AT_SIGNATURE,
-                KeyUsage = X509PrivateKeyUsageFlags.XCN_NCRYPT_ALLOW_ALL_USAGES,
-                MachineContext = machine_context,
-                ExportPolicy = X509PrivateKeyExportFlags.XCN_NCRYPT_ALLOW_EXPORT_FLAG,
-                CspInformations = csp_info
-            };
-
+            var private_key = (IX509PrivateKey)Activator.CreateInstance(Type.GetTypeFromProgID("X509Enrollment.CX509PrivateKey"));
+            private_key.Length = key_size;
+            private_key.KeySpec = X509KeySpec.XCN_AT_SIGNATURE;
+            private_key.KeyUsage = X509PrivateKeyUsageFlags.XCN_NCRYPT_ALLOW_ALL_USAGES;
+            private_key.MachineContext = machine_context;
+            private_key.ExportPolicy = X509PrivateKeyExportFlags.XCN_NCRYPT_ALLOW_EXPORT_FLAG;
+            private_key.CspInformations = csp_info;
             private_key.Create();
 
             return private_key;
