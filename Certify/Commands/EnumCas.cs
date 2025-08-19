@@ -183,7 +183,11 @@ namespace Certify.Commands
                         PrintCAWebServices(ca.GetWebServices());
 
                     Console.WriteLine("    Enabled Certificate Templates:");
-                    Console.WriteLine("        " + string.Join("\n        ", ca.Templates));
+
+                    if (ca.Templates == null || !ca.Templates.Any())
+                        Console.WriteLine("    There are no enabled Certificate Templates");
+                    else
+                        Console.WriteLine("        " + string.Join("\n        ", ca.Templates));
                 }
             }
         }
