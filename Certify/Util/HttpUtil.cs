@@ -176,7 +176,7 @@ namespace Certify.Lib
                     var response = SynchronizeHttpTask(() => client.GetAsync(url));
                     return response.StatusCode == HttpStatusCode.OK;
                 }
-                catch (HttpRequestException e)
+                catch (Exception e)
                 {
                     Console.WriteLine($"[X] AuthWithChannelBinding HTTP request failed with error: {e.Message}");
                     return false;
@@ -229,7 +229,7 @@ namespace Certify.Lib
 
                         ntlm_message = response.Headers.GetValues("WWW-Authenticate").First();
                     }
-                    catch (HttpRequestException e)
+                    catch (Exception e)
                     {
                         Console.WriteLine($"[X] AuthWithoutChannelBinding HTTP request failed with error: {e.Message}");
                         return false;
@@ -248,7 +248,7 @@ namespace Certify.Lib
                         var response = SynchronizeHttpTask(() => client.SendAsync(request_message));
                         return response.StatusCode == HttpStatusCode.OK;
                     }
-                    catch (HttpRequestException e)
+                    catch (Exception e)
                     {
                         Console.WriteLine($"[X] AuthWithoutChannelBinding HTTP request failed with error: {e.Message}");
                         return false;
