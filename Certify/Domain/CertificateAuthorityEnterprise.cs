@@ -312,8 +312,15 @@ namespace Certify.Domain
 
             try
             {
+                var valid_responses = new List<HttpStatusCode>()
+                {
+                    HttpStatusCode.OK,
+                    HttpStatusCode.Unauthorized,
+                    HttpStatusCode.Forbidden
+                };
+
                 using (var response = (HttpWebResponse)request.GetResponse())
-                    return response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Unauthorized;
+                    return valid_responses.Contains(response.StatusCode);
             }
             catch (Exception)
             {
