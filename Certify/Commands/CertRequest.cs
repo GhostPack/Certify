@@ -133,6 +133,12 @@ namespace Certify.Commands
                         Console.WriteLine($"[*] No subject name specified, using current context as subject.");
                     }
                 }
+                
+                if (string.IsNullOrEmpty(subject_name))
+                {
+                    subject_name = "CN=User";
+                    Console.WriteLine($"[*] Current context did not contain a subject. Using default 'CN=User'.");
+                }
 
                 Console.WriteLine();
                 Console.WriteLine($"[*] Template                : {opts.TemplateName}");
@@ -200,7 +206,7 @@ namespace Certify.Commands
 
         private static string GetCurrentUserDN()
         {
-            return UserPrincipal.Current.DistinguishedName.Replace(",", ", ");
+            return UserPrincipal.Current.DistinguishedName?.Replace(",", ", ");
         }
 
         private static string GetCurrentComputerDN()
