@@ -47,12 +47,14 @@ namespace Certify
             var private_key_pem = ConvertToPEM(private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64));
 
             // construct the request for the template name specified
-            var pkcs10 = new CX509CertificateRequestPkcs10();
+            var pkcs10 = (IX509CertificateRequestPkcs10V3)Activator.CreateInstance(Type.GetTypeFromProgID("X509Enrollment.CX509CertificateRequestPkcs10"));
 
             if (machine_context)
-                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextMachine, private_key, template_name);
+                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextMachine, private_key, string.Empty);
             else
-                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextUser, private_key, template_name);
+                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextUser, private_key, string.Empty);
+
+            pkcs10.X509Extensions.Add(CreateTemplateNameExtension(template_name));
 
             var distinguished_name = new CX500DistinguishedName();
 
@@ -94,12 +96,14 @@ namespace Certify
             var private_key_pem = ConvertToPEM(private_key.Export("PRIVATEBLOB", EncodingType.XCN_CRYPT_STRING_BASE64));
 
             // construct the request for the template name specified
-            var pkcs10 = new CX509CertificateRequestPkcs10();
+            var pkcs10 = (IX509CertificateRequestPkcs10V3)Activator.CreateInstance(Type.GetTypeFromProgID("X509Enrollment.CX509CertificateRequestPkcs10"));
 
             if (machine_context)
-                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextMachine, private_key, template_name);
+                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextMachine, private_key, string.Empty);
             else
-                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextUser, private_key, template_name);
+                pkcs10.InitializeFromPrivateKey(X509CertificateEnrollmentContext.ContextUser, private_key, string.Empty);
+
+            pkcs10.X509Extensions.Add(CreateTemplateNameExtension(template_name));
 
             if (application_policies != null && application_policies.Any())
                 pkcs10.X509Extensions.Add(CreateApplicationPolicyExtension(application_policies));
@@ -264,6 +268,13 @@ namespace Certify
             altname_pair.Initialize("SAN", string.Join("&", sans.Select(x => $"{kv_mapping[x.Item1]}={x.Item2}")));
 
             return altname_pair;
+        }
+
+        private static CX509Extension CreateTemplateNameExtension(string template_name)
+        {
+            var template_extension = new CX509ExtensionTemplateName();
+            template_extension.InitializeEncode(template_name);
+            return (CX509Extension)template_extension;
         }
 
         private static CX509Extension CreateSanExtension(IEnumerable<Tuple<SubjectAltNameType, string>> sans)

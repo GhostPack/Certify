@@ -315,7 +315,7 @@ namespace Certify.Domain
                 using (var response = (HttpWebResponse)request.GetResponse())
                     return response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Unauthorized;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return false;
             }
