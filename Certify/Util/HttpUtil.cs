@@ -176,9 +176,15 @@ namespace Certify.Lib
                     var response = SynchronizeHttpTask(() => client.GetAsync(url));
                     return response.StatusCode == HttpStatusCode.OK;
                 }
+                catch (AggregateException ae)
+                {
+                    var innerException = ae.InnerException ?? ae;
+                    Console.WriteLine($"[X] AuthWithChannelBinding HTTP request failed for URL '{url}' with error: {innerException.Message}");
+                    return false;
+                }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"[X] AuthWithChannelBinding HTTP request failed with error: {e.Message}");
+                    Console.WriteLine($"[X] AuthWithChannelBinding HTTP request failed for URL '{url}' with error: {e.Message}");
                     return false;
                 }
             }
@@ -229,9 +235,15 @@ namespace Certify.Lib
 
                         ntlm_message = response.Headers.GetValues("WWW-Authenticate").First();
                     }
+                    catch (AggregateException ae)
+                    {
+                        var innerException = ae.InnerException ?? ae;
+                        Console.WriteLine($"[X] AuthWithoutChannelBinding HTTP request failed for URL '{url}' with error: {innerException.Message}");
+                        return false;
+                    }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"[X] AuthWithoutChannelBinding HTTP request failed with error: {e.Message}");
+                        Console.WriteLine($"[X] AuthWithoutChannelBinding HTTP request failed for URL '{url}' with error: {e.Message}");
                         return false;
                     }
 
@@ -248,9 +260,15 @@ namespace Certify.Lib
                         var response = SynchronizeHttpTask(() => client.SendAsync(request_message));
                         return response.StatusCode == HttpStatusCode.OK;
                     }
+                    catch (AggregateException ae)
+                    {
+                        var innerException = ae.InnerException ?? ae;
+                        Console.WriteLine($"[X] AuthWithoutChannelBinding HTTP request failed for URL '{url}' with error: {innerException.Message}");
+                        return false;
+                    }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"[X] AuthWithoutChannelBinding HTTP request failed with error: {e.Message}");
+                        Console.WriteLine($"[X] AuthWithoutChannelBinding HTTP request failed for URL '{url}' with error: {e.Message}");
                         return false;
                     }
                 }
@@ -301,9 +319,16 @@ namespace Certify.Lib
         private static HttpResponseMessage SynchronizeHttpTask(Func<Task<HttpResponseMessage>> fn)
         {
             var task = Task.Run(() => fn());
-            task.Wait();
-
-            return task.Result;
+            try
+            {
+                task.Wait();
+                return task.Result;
+            }
+            catch (AggregateException ae)
+            {
+                // Extract the inner exception from AggregateException
+                throw ae.InnerException ?? ae;
+            }
         }
     }
 }
