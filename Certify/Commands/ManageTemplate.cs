@@ -270,6 +270,9 @@ namespace Certify.Commands
                         template.Properties["pkiExtendedKeyUsage"].Remove(oid);
                     else
                         template.Properties["pkiExtendedKeyUsage"].Add(oid);
+
+                    template.Properties["msPKI-Certificate-Application-Policy"].Clear();
+                    template.Properties["msPKI-Certificate-Application-Policy"].AddRange(template.Properties["pkiExtendedKeyUsage"]);
                 }
 
                 if (opts.ToggleClientAuth)
