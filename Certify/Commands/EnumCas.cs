@@ -185,7 +185,7 @@ namespace Certify.Commands
                     Console.WriteLine("    Enabled Certificate Templates:");
 
                     if (ca.Templates == null || !ca.Templates.Any())
-                        Console.WriteLine("    There are no enabled Certificate Templates");
+                        Console.WriteLine("        There are no enabled Certificate Templates");
                     else
                         Console.WriteLine("        " + string.Join("\n        ", ca.Templates));
                 }
