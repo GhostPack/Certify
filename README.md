@@ -23,15 +23,6 @@ A command overview and comprehensive usage details can be found on the [wiki](ht
 
 Certify was released at Black Hat 2021 with our ["Certified Pre-Owned: Abusing Active Directory Certificate Services"](https://www.blackhat.com/us-21/briefings/schedule/#certified-pre-owned-abusing-active-directory-certificate-services-23168) talk.
 
-The [TypeRefHash](https://www.gdatasoftware.com/blog/2020/06/36164-introducing-the-typerefhash-trh) of the current Certify codebase is:
-```
-015430f861aaeabd8ede11f450ab472b345883a5b0f5c5d0f92ab8839686db15
-```
-
-The TypeLib GUID of Certify is `15cfadd8-5f6c-424b-81dc-c028312d025f`.
-
-This is reflected in the Yara rules currently in this repo.
-
 See our [whitepaper](https://specterops.io/assets/resources/Certified_Pre-Owned.pdf) for prevention and detection guidance.
 
 
