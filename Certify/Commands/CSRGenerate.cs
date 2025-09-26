@@ -15,9 +15,9 @@ using System.IO;
 
 namespace Certify.Commands
 {
-    internal class CertRequest
+    internal class CSRGenerate
     {
-        [Verb("request", HelpText = "Request a certificate")]
+        [Verb("generate-csr", HelpText = "Generate a Certificate Signing Request")]
         public class Options : DefaultOptions
         {
             [Option("ca", Required = true, HelpText = "Target certificate authority (format: SERVER\\CA-NAME)")]
@@ -53,19 +53,18 @@ namespace Certify.Commands
             [Option("machine", HelpText = "Request as the machine account")]
             public bool MachineContext { get; set; }
 
-            [Option("output-pem", HelpText = "Output certificate in PEM format")]
-            public bool OutputPem { get; set; }
+            [Option("output-csr", HelpText = "Output CSR")]
+            public string OutputCSR { get; set; }
 
-            [Option("install", HelpText = "Install certificate in the current store")]
-            public bool Install { get; set; }
+            [Option("output-key", HelpText = "Output Key")]
+            public string OutputKey { get; set; }
 
-           
 
         }
 
         public static int Execute(Options opts)
         {
-            Console.WriteLine("[*] Action: Request a certificate");
+            Console.WriteLine("[*] Action: Generate a Certificate Signing Request (CSR)");
 
             if (!string.IsNullOrEmpty(opts.CertificateAuthority) && !opts.CertificateAuthority.Contains("\\"))
             {
@@ -103,16 +102,16 @@ namespace Certify.Commands
             if (!string.IsNullOrEmpty(opts.SubjectAltNameSid))
                 sans.Add(new Tuple<SubjectAltNameType, string>(SubjectAltNameType.Url, $"tag:microsoft.com,2022-09-14:sid:{opts.SubjectAltNameSid}"));
 
-            RequestCert(opts, sans);
+            BuildCSR(opts, sans);
             return 0;
         }
 
-        private static void RequestCert(Options opts, IEnumerable<Tuple<SubjectAltNameType, string>> sans)
+        private static void BuildCSR(Options opts, IEnumerable<Tuple<SubjectAltNameType, string>> sans)
         {
             if (opts.MachineContext && !WindowsIdentity.GetCurrent().IsSystem)
             {
                 Console.WriteLine("[*] Elevating to SYSTEM context for machine cert request");
-                ElevationUtil.GetSystem(() => RequestCert(opts, sans));
+                ElevationUtil.GetSystem(() => BuildCSR(opts, sans));
             }
             else
             {
@@ -160,51 +159,41 @@ namespace Certify.Commands
                 var csr = CertEnrollment.CreateCertRequestMessage(opts.TemplateName, subject_name, sans, 
                     opts.SidExtension, opts.ApplicationPolicies, opts.KeySize, opts.MachineContext);
 
-                Console.WriteLine();
-                Console.WriteLine($"[*] Certificate Authority   : {opts.CertificateAuthority}");
 
-                try
+                if (!string.IsNullOrEmpty(opts.OutputCSR))
                 {
-                    int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1);
 
-                    Console.WriteLine($"[*] Request ID              : {request_id}");
-                    Console.WriteLine();
+                    string CSRPath = opts.OutputCSR;
+                    File.WriteAllText(CSRPath, csr.Item1);
+                    Console.WriteLine("[+] CSR written to " + CSRPath);
 
-                    Thread.Sleep(3000);
-
-                    var certificate_pem = string.Empty;
-
-                    if (!opts.Install)
-                        certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, request_id);
-                    else
-                        certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, request_id, X509CertificateEnrollmentContext.ContextUser);
-
-                    if (opts.OutputPem)
-                    {
-                        Console.WriteLine("[*] Certificate (PEM)       :");
-                        Console.WriteLine();
-                        Console.Write(csr.Item2);
-                        Console.Write(certificate_pem);
-                    }
-                    else
-                    {
-                        Console.WriteLine("[*] Certificate (PFX)       :");
-                        Console.WriteLine();
-                        Console.WriteLine(Convert.ToBase64String(CertTransformUtil.MakePfx(certificate_pem, csr.Item2)));
-                    }
                 }
-                catch (Exception e)
+                else {
+
+                    Console.WriteLine("[*] Dumping Certificate Signing Request\n");
+                    Console.WriteLine(csr.Item1);
+                    Console.WriteLine("");
+                }
+
+                if (!string.IsNullOrEmpty(opts.OutputKey))
                 {
-                    Console.WriteLine($"[X] Error requesting the certificate: {e.Message}");
-                    Console.WriteLine();
-                    Console.WriteLine("[*] Private Key (PEM)       :");
-                    Console.WriteLine();
 
-                    if (opts.OutputPem)
-                        Console.Write(csr.Item2);
-                    else
-                        Console.WriteLine(Convert.ToBase64String(Encoding.UTF8.GetBytes(csr.Item2)));
+                    string KeyPath = opts.OutputKey;
+                    File.WriteAllText(KeyPath, csr.Item2);
+                    Console.WriteLine("[+] RSA Key written to " + KeyPath);
+
                 }
+                else
+                {
+
+                    Console.WriteLine("[*] Dumping Key Associated to CSR\n");
+                    Console.WriteLine(csr.Item2);
+                    Console.WriteLine("");
+                }
+
+                Console.WriteLine("[+] Certificate Signing Request generated Successfully!");
+              
+               
             }
         }
 
