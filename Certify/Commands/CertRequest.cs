@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Linq;
 using System.DirectoryServices.AccountManagement;
-using System.IO;
 
 #if !DISARMED
 
