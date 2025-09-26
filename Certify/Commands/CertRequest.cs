@@ -58,8 +58,6 @@ namespace Certify.Commands
             [Option("install", HelpText = "Install certificate in the current store")]
             public bool Install { get; set; }
 
-           
-
         }
 
         public static int Execute(Options opts)
