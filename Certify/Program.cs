@@ -64,8 +64,7 @@ namespace Certify
                 CertForge.Options, 
                 ManageCa.Options, 
                 ManageTemplate.Options, 
-                ManageSelf.Options,
-                CSRGenerate.Options
+                ManageSelf.Options
 #endif
                 >(args);
         }
@@ -85,7 +84,6 @@ namespace Certify
                 (ManageCa.Options opts) => ManageCa.Execute(opts),
                 (ManageTemplate.Options opts) => ManageTemplate.Execute(opts),
                 (ManageSelf.Options opts) => ManageSelf.Execute(opts),
-                (CSRGenerate.Options opts) => CSRGenerate.Execute(opts),
 #endif
                 errors =>
                 {
