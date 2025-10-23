@@ -55,6 +55,9 @@ namespace Certify.Commands
             [Option("output-pem", HelpText = "Output certificate in PEM format")]
             public bool OutputPem { get; set; }
 
+            [Option("output-csr", HelpText = "Output certificate signing request (CSR)")]
+            public bool OutputCSR { get; set; }
+
             [Option("install", HelpText = "Install certificate in the current store")]
             public bool Install { get; set; }
         }
@@ -159,47 +162,58 @@ namespace Certify.Commands
                 Console.WriteLine();
                 Console.WriteLine($"[*] Certificate Authority   : {opts.CertificateAuthority}");
 
-                try
+                if (opts.OutputCSR)
                 {
-                    int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1);
-
-                    Console.WriteLine($"[*] Request ID              : {request_id}");
-                    Console.WriteLine();
-
-                    Thread.Sleep(3000);
-
-                    var certificate_pem = string.Empty;
-
-                    if (!opts.Install)
-                        certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, request_id);
-                    else
-                        certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, request_id, X509CertificateEnrollmentContext.ContextUser);
-
-                    if (opts.OutputPem)
-                    {
-                        Console.WriteLine("[*] Certificate (PEM)       :");
-                        Console.WriteLine();
-                        Console.Write(csr.Item2);
-                        Console.Write(certificate_pem);
-                    }
-                    else
-                    {
-                        Console.WriteLine("[*] Certificate (PFX)       :");
-                        Console.WriteLine();
-                        Console.WriteLine(Convert.ToBase64String(CertTransformUtil.MakePfx(certificate_pem, csr.Item2)));
-                    }
+                    Console.WriteLine("\n[*] Generate Certificate Signing Request (CSR)");
+                    Console.WriteLine("[+] Cert Signing Request    :");
+                    Console.WriteLine(csr.Item1);
+                    Console.WriteLine("\n[+] Private Key           :");
+                    Console.WriteLine(csr.Item2);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"[X] Error requesting the certificate: {e.Message}");
-                    Console.WriteLine();
-                    Console.WriteLine("[*] Private Key (PEM)       :");
-                    Console.WriteLine();
+                else { 
 
-                    if (opts.OutputPem)
-                        Console.Write(csr.Item2);
-                    else
-                        Console.WriteLine(Convert.ToBase64String(Encoding.UTF8.GetBytes(csr.Item2)));
+                    try
+                    {
+                        int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1);
+
+                        Console.WriteLine($"[*] Request ID              : {request_id}");
+                        Console.WriteLine();
+
+                        Thread.Sleep(3000);
+
+                        var certificate_pem = string.Empty;
+
+                        if (!opts.Install)
+                            certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, request_id);
+                        else
+                            certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, request_id, X509CertificateEnrollmentContext.ContextUser);
+
+                        if (opts.OutputPem)
+                        {
+                            Console.WriteLine("[*] Certificate (PEM)       :");
+                            Console.WriteLine();
+                            Console.Write(csr.Item2);
+                            Console.Write(certificate_pem);
+                        }
+                        else
+                        {
+                            Console.WriteLine("[*] Certificate (PFX)       :");
+                            Console.WriteLine();
+                            Console.WriteLine(Convert.ToBase64String(CertTransformUtil.MakePfx(certificate_pem, csr.Item2)));
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"[X] Error requesting the certificate: {e.Message}");
+                        Console.WriteLine();
+                        Console.WriteLine("[*] Private Key (PEM)       :");
+                        Console.WriteLine();
+
+                        if (opts.OutputPem)
+                            Console.Write(csr.Item2);
+                        else
+                            Console.WriteLine(Convert.ToBase64String(Encoding.UTF8.GetBytes(csr.Item2)));
+                    }
                 }
             }
         }
