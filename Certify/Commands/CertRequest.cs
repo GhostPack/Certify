@@ -164,14 +164,16 @@ namespace Certify.Commands
 
                 if (opts.OutputCSR)
                 {
-                    Console.WriteLine("\n[*] Generate Certificate Signing Request (CSR)");
+                    Console.WriteLine();
+                    Console.WriteLine("[*] Generate Certificate Signing Request (CSR)");
                     Console.WriteLine("[+] Cert Signing Request    :");
                     Console.WriteLine(csr.Item1);
-                    Console.WriteLine("\n[+] Private Key           :");
+                    Console.WriteLine();
+                    Console.WriteLine("[+] Private Key           :");
                     Console.WriteLine(csr.Item2);
                 }
-                else { 
-
+                else
+                { 
                     try
                     {
                         int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1);
