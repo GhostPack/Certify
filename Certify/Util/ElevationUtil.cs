@@ -43,7 +43,7 @@ namespace Certify.Lib
 
                 try
                 {
-                    // Open winlogon's token with TOKEN_DUPLICATE accesss so ca can make a copy of the token with DuplicateToken
+                    // Open winlogon's token with TOKEN_DUPLICATE accesss so we can make a copy of the token with DuplicateToken
                     if (!OpenProcessToken(process.Handle, 0x0002 /* TOKEN_DUPLICATE */, out hProcToken))
                     {
                         Console.WriteLine($"[!] OpenProcessToken failed with the following error: {Marshal.GetLastWin32Error()}");
