@@ -1,8 +1,9 @@
-﻿using CERTENROLLLib;
+using CERTENROLLLib;
 using Certify.Lib;
 using CommandLine;
 using System;
 using System.Collections.Generic;
+using System.Security;
 using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -60,6 +61,12 @@ namespace Certify.Commands
 
             [Option("install", HelpText = "Install certificate in the current store")]
             public bool Install { get; set; }
+
+            [Option('u', "username", HelpText = "Username for authentication (format: user@domain.fqdn). Omit to use the current user.")]
+            public string Username { get; set; }
+
+            [Option('p', "password", HelpText = "Password for authentication. If omitted while --username is set, you'll be prompted (input hidden).")]
+            public string Password { get; set; }
         }
 
         public static int Execute(Options opts)
@@ -85,6 +92,12 @@ namespace Certify.Commands
             {
                 Console.WriteLine("[X] The 'key size' parameter must be either 512, 1024, 2048 or 4096.");
                 return 1;
+            }
+
+            // Prompt for password if a username was given but no password was provided
+            if (!string.IsNullOrEmpty(opts.Username) && string.IsNullOrEmpty(opts.Password))
+            {
+                opts.Password = ReadPasswordMasked($"Password for {opts.Username}: ");
             }
 
             var sans = new List<Tuple<SubjectAltNameType, string>>();
@@ -118,6 +131,9 @@ namespace Certify.Commands
                 Console.WriteLine();
                 Console.WriteLine($"[*] Current user context    : {WindowsIdentity.GetCurrent().Name}");
 
+                if (!string.IsNullOrEmpty(opts.Username))
+                    Console.WriteLine($"[*] Authenticating as        : {opts.Username}");
+
                 var subject_name = opts.SubjectName;
 
                 if (string.IsNullOrEmpty(subject_name))
@@ -136,7 +152,7 @@ namespace Certify.Commands
                         Console.WriteLine($"[*] No subject name specified, using current context as subject.");
                     }
                 }
-                
+
                 if (string.IsNullOrEmpty(subject_name))
                 {
                     subject_name = "CN=User";
@@ -156,7 +172,7 @@ namespace Certify.Commands
                 if (opts.ApplicationPolicies != null && opts.ApplicationPolicies.Any())
                     Console.WriteLine($"[*] Application Policies    : {string.Join(", ", opts.ApplicationPolicies)}");
 
-                var csr = CertEnrollment.CreateCertRequestMessage(opts.TemplateName, subject_name, sans, 
+                var csr = CertEnrollment.CreateCertRequestMessage(opts.TemplateName, subject_name, sans,
                     opts.SidExtension, opts.ApplicationPolicies, opts.KeySize, opts.MachineContext);
 
                 Console.WriteLine();
@@ -173,10 +189,10 @@ namespace Certify.Commands
                     Console.WriteLine(csr.Item2);
                 }
                 else
-                { 
+                {
                     try
                     {
-                        int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1);
+                        int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1, opts.Username, opts.Password);
 
                         Console.WriteLine($"[*] Request ID              : {request_id}");
                         Console.WriteLine();
@@ -186,9 +202,9 @@ namespace Certify.Commands
                         var certificate_pem = string.Empty;
 
                         if (!opts.Install)
-                            certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, request_id);
+                            certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, request_id, opts.Username, opts.Password);
                         else
-                            certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, request_id, X509CertificateEnrollmentContext.ContextUser);
+                            certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, request_id, X509CertificateEnrollmentContext.ContextUser, opts.Username, opts.Password);
 
                         if (opts.OutputPem)
                         {
@@ -228,6 +244,47 @@ namespace Certify.Commands
         private static string GetCurrentComputerDN()
         {
             return $"CN={System.Net.Dns.GetHostEntry("").HostName}";
+        }
+
+        // Reads a password from the console without echoing it to the screen.
+        private static string ReadPasswordMasked(string prompt)
+        {
+            Console.Write(prompt);
+
+            var secure = new SecureString();
+
+            ConsoleKeyInfo key;
+            while ((key = Console.ReadKey(intercept: true)).Key != ConsoleKey.Enter)
+            {
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (secure.Length > 0)
+                    {
+                        secure.RemoveAt(secure.Length - 1);
+                        Console.Write("\b \b");
+                    }
+                    continue;
+                }
+
+                if (key.KeyChar != '\0')
+                {
+                    secure.AppendChar(key.KeyChar);
+                    Console.Write('*');
+                }
+            }
+
+            Console.WriteLine();
+            secure.MakeReadOnly();
+
+            var ptr = System.Runtime.InteropServices.Marshal.SecureStringToGlobalAllocUnicode(secure);
+            try
+            {
+                return System.Runtime.InteropServices.Marshal.PtrToStringUni(ptr);
+            }
+            finally
+            {
+                System.Runtime.InteropServices.Marshal.ZeroFreeGlobalAllocUnicode(ptr);
+            }
         }
     }
 }

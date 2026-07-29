@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Linq;
@@ -11,14 +11,23 @@ namespace Certify.Lib
         public string ConfigurationPath { get; }
         public string LdapServer { get; }
 
+        // Stored once, reused by every method below instead of literal strings.
+        private readonly string _username;
+        private readonly string _password;
+        private readonly AuthenticationTypes _authType;
+
         public LdapOperations()
             : this(null, null)
         {
 
         }
 
-        public LdapOperations(string domain, string server)
+        public LdapOperations(string domain, string server, string username = null, string password = null)
         {
+            _username = username;
+            _password = password;
+            _authType = AuthenticationTypes.Secure;
+
             string root_dse_path;
 
             if (domain == null)
@@ -27,12 +36,34 @@ namespace Certify.Lib
                 root_dse_path = $"LDAP://{domain}/RootDSE";
 
             using (var root_dse = new DirectoryEntry(root_dse_path))
+            {
+                root_dse.Username = _username;
+                root_dse.Password = _password;
+                root_dse.AuthenticationType = _authType;
                 ConfigurationPath = $"{root_dse.Properties["configurationNamingContext"][0]}";
+            }
+
 
             if (server == null)
                 LdapServer = string.Empty;
             else
                 LdapServer = $"{server}/";
+        }
+
+        // Single place that builds an authenticated DirectoryEntry.
+        // Every method now calls this instead of repeating Username/Password/AuthenticationType assignments.
+        private DirectoryEntry GetDirectoryEntry(string path)
+        {
+            var entry = new DirectoryEntry(path);
+
+            if (!string.IsNullOrEmpty(_username))
+            {
+                entry.Username = _username;
+                entry.Password = _password;
+                entry.AuthenticationType = _authType;
+            }
+
+            return entry;
         }
 
         public IEnumerable<PKIObject> GetPKIObjects()
@@ -42,7 +73,7 @@ namespace Certify.Lib
             // Container location per MS-WCCE 2.2.2.11.2 Enrollment Services Container
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/3ec073ec-9b91-4bee-964e-56f22a93a28c
 
-            using (var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Public Key Services,CN=Services,{ConfigurationPath}"))
+            using (var root = GetDirectoryEntry($"LDAP://{LdapServer}CN=Public Key Services,CN=Services,{ConfigurationPath}"))
             {
                 using (var ds = new DirectorySearcher(root) { SecurityMasks = SecurityMasks.Dacl | SecurityMasks.Owner })
                 {
@@ -98,7 +129,7 @@ namespace Certify.Lib
             // Container location per MS-WCCE 2.2.2.11.2 Enrollment Services Container
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/3ec073ec-9b91-4bee-964e-56f22a93a28c
 
-            using (var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Enrollment Services,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
+            using (var root = GetDirectoryEntry($"LDAP://{LdapServer}CN=Enrollment Services,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
             {
                 using (var ds = new DirectorySearcher(root) { SecurityMasks = SecurityMasks.Dacl | SecurityMasks.Owner })
                 {
@@ -136,7 +167,7 @@ namespace Certify.Lib
             // Container location per MS-WCCE 2.2.2.11.3 NTAuthCertificates Object
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/f1004c63-8508-43b5-9b0b-ee7880183745
 
-            using (var root = new DirectoryEntry($"LDAP://{LdapServer}CN=NTAuthCertificates,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
+            using (var root = GetDirectoryEntry($"LDAP://{LdapServer}CN=NTAuthCertificates,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
             {
                 using (var ds = new DirectorySearcher(root) { Filter = "(objectClass=certificationAuthority)" })
                 {
@@ -168,7 +199,7 @@ namespace Certify.Lib
             // Container location per MS-WCCE 2.2.2.11.1 Certificates Templates Container
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/9279abb2-3dfa-4631-845c-43c187ac4b44
 
-            using (var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Certificate Templates,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
+            using (var root = GetDirectoryEntry($"LDAP://{LdapServer}CN=Certificate Templates,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
             {
                 using (var ds = new DirectorySearcher(root) { SecurityMasks = SecurityMasks.Dacl | SecurityMasks.Owner, Filter = "(objectclass=pKICertificateTemplate)" })
                 {
@@ -207,7 +238,7 @@ namespace Certify.Lib
 
         public DirectoryEntry GetCertificateTemplateEntry(string template)
         {
-            using (var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Certificate Templates,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
+            using (var root = GetDirectoryEntry($"LDAP://{LdapServer}CN=Certificate Templates,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
             {
                 using (var ds = new DirectorySearcher(root) { SecurityMasks = SecurityMasks.Dacl | SecurityMasks.Owner, Filter = $"(&(objectclass=pKICertificateTemplate)(name={template}))" })
                 {
@@ -231,7 +262,7 @@ namespace Certify.Lib
             // Container location per MS-WCCE 2.2.2.11.4 Certification Authorities Container
             // - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/6c446198-f670-4885-97a9-cbc50a2b96b4
 
-            using (var root = new DirectoryEntry($"LDAP://{LdapServer}CN=Certification Authorities,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
+            using (var root = GetDirectoryEntry($"LDAP://{LdapServer}CN=Certification Authorities,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
             {
                 using (var ds = new DirectorySearcher(root) { Filter = "(objectCategory=certificationAuthority)" })
                 {
@@ -260,7 +291,7 @@ namespace Certify.Lib
         {
             var oids = new List<CertificateEnterpriseOid>();
 
-            using (var root = new DirectoryEntry($"LDAP://{LdapServer}CN=OID,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
+            using (var root = GetDirectoryEntry($"LDAP://{LdapServer}CN=OID,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
             {
                 using (var ds = new DirectorySearcher(root) { Filter = "(objectClass=msPKI-Enterprise-Oid)" })
                 {
@@ -286,7 +317,7 @@ namespace Certify.Lib
 
         public CertificateEnterpriseOid GetEnterpriseOid(string oid)
         {
-            using (var root = new DirectoryEntry($"LDAP://{LdapServer}CN=OID,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
+            using (var root = GetDirectoryEntry($"LDAP://{LdapServer}CN=OID,CN=Public Key Services,CN=Services,{ConfigurationPath}"))
             {
                 using (var ds = new DirectorySearcher(root) { Filter = $"(msPKI-Cert-Template-OID={oid})" })
                 {

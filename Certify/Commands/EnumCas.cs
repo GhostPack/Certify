@@ -1,10 +1,11 @@
-﻿using Certify.Domain;
+using Certify.Domain;
 using Certify.Lib;
 using CommandLine;
 using System;
 using System.Collections.Generic;
 using System.DirectoryServices.AccountManagement;
 using System.Linq;
+using System.Security;
 using System.Security.Principal;
 
 namespace Certify.Commands
@@ -40,6 +41,13 @@ namespace Certify.Commands
 
             [Option("skip-web-checks", HelpText = "Skip web service checks")]
             public bool SkipWebServiceChecks { get; set; }
+            
+            [Option('u', "username", HelpText = "Username for LDAP bind (format: user@domain.fqdn). Omit to bind as the current user.")]
+            public string Username { get; set; }
+
+            [Option('p', "password", HelpText = "Password for LDAP bind. If omitted while --username is set, you'll be prompted (input hidden).")]
+            public string Password { get; set; }
+            
         }
 
         public static int Execute(Options opts)
@@ -58,7 +66,12 @@ namespace Certify.Commands
                 return 1;
             }
 
-            var ldap = new LdapOperations(opts.Domain, opts.LdapServer);
+            if (!string.IsNullOrEmpty(opts.Username) && string.IsNullOrEmpty(opts.Password))
+            {
+                opts.Password = ReadPasswordMasked($"Password for {opts.Username}: ");
+            }
+
+            var ldap = new LdapOperations(opts.Domain, opts.LdapServer, opts.Username, opts.Password);
 
             Console.WriteLine($"[*] Using the search base '{ldap.ConfigurationPath}'");
 
@@ -189,6 +202,46 @@ namespace Certify.Commands
                     else
                         Console.WriteLine("        " + string.Join("\n        ", ca.Templates));
                 }
+            }
+        }
+
+        private static string ReadPasswordMasked(string prompt)
+        {
+            Console.Write(prompt);
+
+            var secure = new SecureString();
+
+            ConsoleKeyInfo key;
+            while ((key = Console.ReadKey(intercept: true)).Key != ConsoleKey.Enter)
+            {
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (secure.Length > 0)
+                    {
+                        secure.RemoveAt(secure.Length - 1);
+                        Console.Write("\b \b");
+                    }
+                    continue;
+                }
+
+                if (key.KeyChar != '\0')
+                {
+                    secure.AppendChar(key.KeyChar);
+                    Console.Write('*');
+                }
+            }
+
+            Console.WriteLine();
+            secure.MakeReadOnly();
+
+            var ptr = System.Runtime.InteropServices.Marshal.SecureStringToGlobalAllocUnicode(secure);
+            try
+            {
+                return System.Runtime.InteropServices.Marshal.PtrToStringUni(ptr);
+            }
+            finally
+            {
+                System.Runtime.InteropServices.Marshal.ZeroFreeGlobalAllocUnicode(ptr);
             }
         }
 
