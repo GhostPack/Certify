@@ -19,6 +19,12 @@ namespace Certify.Commands
             [Option("ca", Required = true, HelpText = "Target certificate authority (format: SERVER\\CA-NAME)")]
             public string CertificateAuthority { get; set; }
 
+            [Option("username", HelpText = "Username for operation")]
+            public string Username { get; set; }
+
+            [Option("password", HelpText = "Password for operation")]
+            public string Password { get; set; }
+
             [Option("cert-pfx", Required = true, HelpText = "Target certificate to renew")]
             public string CertificatePfx { get; set; }
 
@@ -45,7 +51,14 @@ namespace Certify.Commands
                 return 1;
             }
 
-            RequestCertRenew(opts);
+            if (!string.IsNullOrEmpty(opts.Username) && string.IsNullOrEmpty(opts.Password))
+                opts.Password = DisplayUtil.ReadPasswordMasked($"Password for {opts.Username}: ");
+
+            using (var impersonation = ImpersonationHelper.Impersonate(opts.Username, opts.Password))
+            {
+                RequestCertRenew(opts);
+            }
+
             return 0;
         }
 

@@ -28,6 +28,12 @@ namespace Certify.Commands
             [Option("ldap-server", HelpText = "Target LDAP server")]
             public string LdapServer { get; set; }
 
+            [Option("username", HelpText = "Username for LDAP bind")]
+            public string Username { get; set; }
+
+            [Option("password", HelpText = "Password for LDAP bind")]
+            public string Password { get; set; }
+
             [Option("current-user", SetName = "MarkCurrentUser", HelpText = "Mark vulnerabilities as current user")]
             public bool CurrentUser { get; set; }
 
@@ -57,12 +63,6 @@ namespace Certify.Commands
 
             [Option("show-all-perms", HelpText = "Show all permission details")]
             public bool ShowAllPermissions { get; set; }
-            
-            [Option('u', "username", HelpText = "Username for LDAP bind (format: user@domain.fqdn). Omit to bind as the current user.")]
-            public string Username { get; set; }
-
-            [Option('p', "password", HelpText = "Password for LDAP bind. If omitted while --username is set, you'll be prompted (input hidden).")]
-            public string Password { get; set; }
         }
 
         public static int Execute(Options opts)
@@ -81,13 +81,8 @@ namespace Certify.Commands
                 return 1;
             }
 
-            // If a username was given but no password, prompt interactively instead of
-            // requiring the password on the command line (avoids it sitting in shell
-            // history / process listings).
             if (!string.IsNullOrEmpty(opts.Username) && string.IsNullOrEmpty(opts.Password))
-            {
-                opts.Password = ReadPasswordMasked($"Password for {opts.Username}: ");
-            }
+                opts.Password = DisplayUtil.ReadPasswordMasked($"Password for {opts.Username}: ");
 
             var ldap = new LdapOperations(opts.Domain, opts.LdapServer, opts.Username, opts.Password);
 
@@ -261,49 +256,6 @@ namespace Certify.Commands
             }
 
             return 0;
-        }
-
-        // Reads a password from the console without echoing it back to the screen.
-        // Keeps the value in a SecureString while typing, then converts to a plain
-        // string only at the point LdapOperations needs it.
-        private static string ReadPasswordMasked(string prompt)
-        {
-            Console.Write(prompt);
-
-            var secure = new SecureString();
-
-            ConsoleKeyInfo key;
-            while ((key = Console.ReadKey(intercept: true)).Key != ConsoleKey.Enter)
-            {
-                if (key.Key == ConsoleKey.Backspace)
-                {
-                    if (secure.Length > 0)
-                    {
-                        secure.RemoveAt(secure.Length - 1);
-                        Console.Write("\b \b");
-                    }
-                    continue;
-                }
-
-                if (key.KeyChar != '\0')
-                {
-                    secure.AppendChar(key.KeyChar);
-                    Console.Write('*');
-                }
-            }
-
-            Console.WriteLine();
-            secure.MakeReadOnly();
-
-            var ptr = System.Runtime.InteropServices.Marshal.SecureStringToGlobalAllocUnicode(secure);
-            try
-            {
-                return System.Runtime.InteropServices.Marshal.PtrToStringUni(ptr);
-            }
-            finally
-            {
-                System.Runtime.InteropServices.Marshal.ZeroFreeGlobalAllocUnicode(ptr);
-            }
         }
     }
 }

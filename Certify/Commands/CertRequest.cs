@@ -22,6 +22,12 @@ namespace Certify.Commands
         {
             [Option("ca", Required = true, HelpText = "Target certificate authority (format: SERVER\\CA-NAME)")]
             public string CertificateAuthority { get; set; }
+            
+            [Option("username", HelpText = "Username for operation")]
+            public string Username { get; set; }
+
+            [Option("password", HelpText = "Password for operation")]
+            public string Password { get; set; }
 
             [Option("template", Required = true, HelpText = "Target certificate template")]
             public string TemplateName { get; set; }
@@ -61,12 +67,6 @@ namespace Certify.Commands
 
             [Option("install", HelpText = "Install certificate in the current store")]
             public bool Install { get; set; }
-
-            [Option('u', "username", HelpText = "Username for authentication (format: user@domain.fqdn). Omit to use the current user.")]
-            public string Username { get; set; }
-
-            [Option('p', "password", HelpText = "Password for authentication. If omitted while --username is set, you'll be prompted (input hidden).")]
-            public string Password { get; set; }
         }
 
         public static int Execute(Options opts)
@@ -94,11 +94,8 @@ namespace Certify.Commands
                 return 1;
             }
 
-            // Prompt for password if a username was given but no password was provided
             if (!string.IsNullOrEmpty(opts.Username) && string.IsNullOrEmpty(opts.Password))
-            {
-                opts.Password = ReadPasswordMasked($"Password for {opts.Username}: ");
-            }
+                opts.Password = DisplayUtil.ReadPasswordMasked($"Password for {opts.Username}: ");
 
             var sans = new List<Tuple<SubjectAltNameType, string>>();
 
@@ -115,7 +112,11 @@ namespace Certify.Commands
             if (!string.IsNullOrEmpty(opts.SubjectAltNameSid))
                 sans.Add(new Tuple<SubjectAltNameType, string>(SubjectAltNameType.Url, $"tag:microsoft.com,2022-09-14:sid:{opts.SubjectAltNameSid}"));
 
-            RequestCert(opts, sans);
+            using (var impersonation = ImpersonationHelper.Impersonate(opts.Username, opts.Password))
+            {
+                RequestCert(opts, sans);
+            }
+
             return 0;
         }
 
@@ -192,7 +193,7 @@ namespace Certify.Commands
                 {
                     try
                     {
-                        int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1, opts.Username, opts.Password);
+                        int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1);
 
                         Console.WriteLine($"[*] Request ID              : {request_id}");
                         Console.WriteLine();
@@ -202,9 +203,9 @@ namespace Certify.Commands
                         var certificate_pem = string.Empty;
 
                         if (!opts.Install)
-                            certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, request_id, opts.Username, opts.Password);
+                            certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, request_id);
                         else
-                            certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, request_id, X509CertificateEnrollmentContext.ContextUser, opts.Username, opts.Password);
+                            certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, request_id, X509CertificateEnrollmentContext.ContextUser);
 
                         if (opts.OutputPem)
                         {

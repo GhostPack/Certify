@@ -122,6 +122,7 @@
     <Compile Include="Lib\CertEnrollment.cs" />
     <Compile Include="Lib\CertAdmin.cs" />
     <Compile Include="Lib\CertSidExtension.cs" />
+    <Compile Include="Lib\ImpersonationHelper.cs" />
     <Compile Include="Util\CertTransformUtil.cs" />
     <Compile Include="Util\DisplayUtil.cs" />
     <Compile Include="Util\DistributedComUtil.cs" />

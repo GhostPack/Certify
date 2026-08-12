@@ -1,13 +1,14 @@
-﻿using System;
+﻿using Certify.Domain;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.DirectoryServices;
 using System.Linq;
+using System.Security;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
-using Certify.Domain;
 
 namespace Certify.Lib
 {
@@ -376,6 +377,49 @@ namespace Certify.Lib
             catch
             {
                 return "<UNKNOWN>";
+            }
+        }
+
+        public static string ReadPasswordMasked(string prompt)
+        {
+            Console.Write(prompt);
+
+            var secure = new SecureString();
+
+            ConsoleKeyInfo key;
+
+            while ((key = Console.ReadKey(intercept: true)).Key != ConsoleKey.Enter)
+            {
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (secure.Length > 0)
+                    {
+                        secure.RemoveAt(secure.Length - 1);
+                        Console.Write("\b \b");
+                    }
+
+                    continue;
+                }
+
+                if (key.KeyChar != '\0')
+                {
+                    secure.AppendChar(key.KeyChar);
+                    Console.Write('*');
+                }
+            }
+
+            Console.WriteLine();
+            secure.MakeReadOnly();
+
+            var ptr = System.Runtime.InteropServices.Marshal.SecureStringToGlobalAllocUnicode(secure);
+
+            try
+            {
+                return System.Runtime.InteropServices.Marshal.PtrToStringUni(ptr);
+            }
+            finally
+            {
+                System.Runtime.InteropServices.Marshal.ZeroFreeGlobalAllocUnicode(ptr);
             }
         }
     }

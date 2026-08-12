@@ -20,6 +20,12 @@ namespace Certify.Commands
             [Option("ca", Required = true, HelpText = "Target certificate authority (format: SERVER\\CA-NAME)")]
             public string CertificateAuthority { get; set; }
 
+            [Option("username", HelpText = "Username for operation")]
+            public string Username { get; set; }
+
+            [Option("password", HelpText = "Password for operation")]
+            public string Password { get; set; }
+
             [Option("template", Required = true, HelpText = "Target certificate template")]
             public string TemplateName { get; set; }
 
@@ -88,7 +94,14 @@ namespace Certify.Commands
                 return 1;
             }
 
-            RequestCertOnBehalf(opts, enrollment_cert_bytes);
+            if (!string.IsNullOrEmpty(opts.Username) && string.IsNullOrEmpty(opts.Password))
+                opts.Password = DisplayUtil.ReadPasswordMasked($"Password for {opts.Username}: ");
+
+            using (var impersonation = ImpersonationHelper.Impersonate(opts.Username, opts.Password))
+            {
+                RequestCertOnBehalf(opts, enrollment_cert_bytes);
+            }
+
             return 0;
         }
 

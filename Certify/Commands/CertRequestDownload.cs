@@ -2,6 +2,7 @@
 using Certify.Lib;
 using CommandLine;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 #if !DISARMED
@@ -15,6 +16,12 @@ namespace Certify.Commands
         {
             [Option("ca", Required = true, HelpText = "Target certificate authority (format: SERVER\\CA-NAME)")]
             public string CertificateAuthority { get; set; }
+
+            [Option("username", HelpText = "Username for operation")]
+            public string Username { get; set; }
+
+            [Option("password", HelpText = "Password for operation")]
+            public string Password { get; set; }
 
             [Option("id", Required = true, HelpText = "Target certificate request id")]
             public int RequestId { get; set; }
@@ -57,6 +64,19 @@ namespace Certify.Commands
                 }
             }
 
+            if (!string.IsNullOrEmpty(opts.Username) && string.IsNullOrEmpty(opts.Password))
+                opts.Password = DisplayUtil.ReadPasswordMasked($"Password for {opts.Username}: ");
+
+            using (var impersonation = ImpersonationHelper.Impersonate(opts.Username, opts.Password))
+            {
+                DownloadCert(opts, private_key);
+            }
+
+            return 0;
+        }
+
+        private static void DownloadCert(Options opts, string private_key)
+        {
             Console.WriteLine();
             Console.WriteLine($"[*] Certificate Authority   : {opts.CertificateAuthority}");
             Console.WriteLine($"[*] Request ID              : {opts.RequestId}");
@@ -96,8 +116,6 @@ namespace Certify.Commands
                 Console.WriteLine();
                 Console.Write(certificate_pem);
             }
-
-            return 0;
         }
     }
 }

@@ -21,17 +21,17 @@ namespace Certify.Commands
             [Option("ldap-server", HelpText = "Target LDAP server")]
             public string LdapServer { get; set; }
 
+            [Option("username", HelpText = "Username for LDAP bind")]
+            public string Username { get; set; }
+
+            [Option("password", HelpText = "Password for LDAP bind")]
+            public string Password { get; set; }
+
             [Option("show-linked-oids", HelpText = "Show enterprise OIDs linked to groups")]
             public bool ShowLinkedOids { get; set; }
 
             [Option("show-admins", HelpText = "Include admin permissions")]
             public bool ShowAdmins { get; set; }
-            
-            [Option('u', "username", HelpText = "Username for LDAP bind (format: user@domain.fqdn). Omit to bind as the current user.")]
-            public string Username { get; set; }
-
-            [Option('p', "password", HelpText = "Password for LDAP bind. If omitted while --username is set, you'll be prompted (input hidden).")]
-            public string Password { get; set; }
         }
 
         public static int Execute(Options opts)
@@ -45,9 +45,7 @@ namespace Certify.Commands
             }
 
             if (!string.IsNullOrEmpty(opts.Username) && string.IsNullOrEmpty(opts.Password))
-            {
-                opts.Password = ReadPasswordMasked($"Password for {opts.Username}: ");
-            }
+                opts.Password = DisplayUtil.ReadPasswordMasked($"Password for {opts.Username}: ");
 
             var ldap = new LdapOperations(opts.Domain, opts.LdapServer, opts.Username, opts.Password);
 
@@ -82,46 +80,6 @@ namespace Certify.Commands
             }
 
             return 0;
-        }
-        
-        private static string ReadPasswordMasked(string prompt)
-        {
-            Console.Write(prompt);
-
-            var secure = new SecureString();
-
-            ConsoleKeyInfo key;
-            while ((key = Console.ReadKey(intercept: true)).Key != ConsoleKey.Enter)
-            {
-                if (key.Key == ConsoleKey.Backspace)
-                {
-                    if (secure.Length > 0)
-                    {
-                        secure.RemoveAt(secure.Length - 1);
-                        Console.Write("\b \b");
-                    }
-                    continue;
-                }
-
-                if (key.KeyChar != '\0')
-                {
-                    secure.AppendChar(key.KeyChar);
-                    Console.Write('*');
-                }
-            }
-
-            Console.WriteLine();
-            secure.MakeReadOnly();
-
-            var ptr = System.Runtime.InteropServices.Marshal.SecureStringToGlobalAllocUnicode(secure);
-            try
-            {
-                return System.Runtime.InteropServices.Marshal.PtrToStringUni(ptr);
-            }
-            finally
-            {
-                System.Runtime.InteropServices.Marshal.ZeroFreeGlobalAllocUnicode(ptr);
-            }
         }
 
         private static Dictionary<string, List<Tuple<string, string>>> GetPkiObjectControllers(IEnumerable<PKIObject> pki_objects)
