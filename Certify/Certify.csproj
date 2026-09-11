@@ -120,6 +120,7 @@
     <Compile Include="Domain\CertificateAuthorityEnterprise.cs" />
     <Compile Include="Domain\PKIObject.cs" />
     <Compile Include="Lib\CertEnrollment.cs" />
+    <Compile Include="Lib\WebEnrollment.cs" />
     <Compile Include="Lib\CertAdmin.cs" />
     <Compile Include="Lib\CertSidExtension.cs" />
     <Compile Include="Lib\ImpersonationHelper.cs" />

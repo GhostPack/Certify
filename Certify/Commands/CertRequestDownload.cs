@@ -1,4 +1,4 @@
-﻿using CERTENROLLLib;
+using CERTENROLLLib;
 using Certify.Lib;
 using CommandLine;
 using System;
@@ -37,6 +37,15 @@ namespace Certify.Commands
 
             [Option("install-user", SetName = "InstallUser", HelpText = "Install certificate in the user store")]
             public bool InstallUser { get; set; }
+
+            [Option("web", HelpText = "Download via HTTP web enrollment instead of RPC/DCOM")]
+            public bool WebEnroll { get; set; }
+
+            [Option("web-host", HelpText = "Web enrollment host if different from the CA server")]
+            public string WebHost { get; set; }
+
+            [Option("https", HelpText = "Use HTTPS for web enrollment download")]
+            public bool UseHttps { get; set; }
         }
 
         public static int Execute(Options opts)
@@ -45,8 +54,11 @@ namespace Certify.Commands
 
             if (!string.IsNullOrEmpty(opts.CertificateAuthority) && !opts.CertificateAuthority.Contains("\\"))
             {
-                Console.WriteLine("[X] The 'certificate authority' parameter is not of the format 'SERVER\\CA-NAME'.");
-                return 1;
+                if (!opts.WebEnroll)
+                {
+                    Console.WriteLine("[X] The 'certificate authority' parameter is not of the format 'SERVER\\CA-NAME'.");
+                    return 1;
+                }
             }
 
             var private_key = string.Empty;
@@ -80,16 +92,44 @@ namespace Certify.Commands
             Console.WriteLine();
             Console.WriteLine($"[*] Certificate Authority   : {opts.CertificateAuthority}");
             Console.WriteLine($"[*] Request ID              : {opts.RequestId}");
-            Console.WriteLine();
 
             var certificate_pem = string.Empty;
 
-            if (!opts.InstallMachine && !opts.InstallUser)
-                certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, opts.RequestId);
-            else if (opts.InstallMachine)
-                certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, opts.RequestId, X509CertificateEnrollmentContext.ContextMachine);
-            else if (opts.InstallUser)
-                certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, opts.RequestId, X509CertificateEnrollmentContext.ContextUser);
+            if (opts.WebEnroll)
+            {
+                // Web enrollment download path
+                var caHost = !string.IsNullOrEmpty(opts.WebHost)
+                    ? opts.WebHost
+                    : opts.CertificateAuthority.Contains("\\")
+                        ? opts.CertificateAuthority.Split('\\')[0]
+                        : opts.CertificateAuthority;
+
+                var scheme = opts.UseHttps ? "https" : "http";
+                Console.WriteLine($"[*] Download method         : Web enrollment ({scheme}://{caHost}/certsrv/)");
+                Console.WriteLine();
+
+                try
+                {
+                    certificate_pem = WebEnrollment.DownloadCert(caHost, opts.RequestId, opts.UseHttps);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[X] Failed to download certificate via web enrollment: {e.Message}");
+                    return;
+                }
+            }
+            else
+            {
+                // Standard RPC/DCOM download path
+                Console.WriteLine();
+
+                if (!opts.InstallMachine && !opts.InstallUser)
+                    certificate_pem = CertEnrollment.DownloadCert(opts.CertificateAuthority, opts.RequestId);
+                else if (opts.InstallMachine)
+                    certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, opts.RequestId, X509CertificateEnrollmentContext.ContextMachine);
+                else if (opts.InstallUser)
+                    certificate_pem = CertEnrollment.DownloadAndInstallCert(opts.CertificateAuthority, opts.RequestId, X509CertificateEnrollmentContext.ContextUser);
+            }
 
             if (!string.IsNullOrEmpty(private_key))
             {
