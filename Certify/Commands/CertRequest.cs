@@ -22,7 +22,7 @@ namespace Certify.Commands
         {
             [Option("ca", Required = true, HelpText = "Target certificate authority (format: SERVER\\CA-NAME)")]
             public string CertificateAuthority { get; set; }
-            
+
             [Option("username", HelpText = "Username for operation")]
             public string Username { get; set; }
 
@@ -67,6 +67,15 @@ namespace Certify.Commands
 
             [Option("install", HelpText = "Install certificate in the current store")]
             public bool Install { get; set; }
+
+            [Option("web", HelpText = "Use HTTP web enrollment instead of RPC/DCOM")]
+            public bool WebEnroll { get; set; }
+
+            [Option("web-host", HelpText = "Web enrollment host if different from the CA server (e.g., ca-web.corp.local)")]
+            public string WebHost { get; set; }
+
+            [Option("https", HelpText = "Use HTTPS for web enrollment")]
+            public bool UseHttps { get; set; }
         }
 
         public static int Execute(Options opts)
@@ -75,8 +84,12 @@ namespace Certify.Commands
 
             if (!string.IsNullOrEmpty(opts.CertificateAuthority) && !opts.CertificateAuthority.Contains("\\"))
             {
-                Console.WriteLine("[X] The 'certificate authority' parameter is not of the format 'SERVER\\CA-NAME'.");
-                return 1;
+                // Allow --ca without backslash when using --web (just the hostname is sufficient)
+                if (!opts.WebEnroll)
+                {
+                    Console.WriteLine("[X] The 'certificate authority' parameter is not of the format 'SERVER\\CA-NAME'.");
+                    return 1;
+                }
             }
 
             foreach (var x in opts.ApplicationPolicies)
@@ -189,8 +202,80 @@ namespace Certify.Commands
                     Console.WriteLine("[+] Private Key           :");
                     Console.WriteLine(csr.Item2);
                 }
+                else if (opts.WebEnroll)
+                {
+                    // Web enrollment path — submit via HTTP instead of RPC/DCOM
+                    var caHost = !string.IsNullOrEmpty(opts.WebHost)
+                        ? opts.WebHost
+                        : opts.CertificateAuthority.Contains("\\")
+                            ? opts.CertificateAuthority.Split('\\')[0]
+                            : opts.CertificateAuthority;
+
+                    var scheme = opts.UseHttps ? "https" : "http";
+                    Console.WriteLine($"[*] Enrollment method       : Web enrollment ({scheme}://{caHost}/certsrv/)");
+                    Console.WriteLine();
+
+                    try
+                    {
+                        var webResult = WebEnrollment.SubmitRequest(caHost, csr.Item1, opts.TemplateName, opts.UseHttps);
+
+                        Console.WriteLine($"[*] CA Response             : {webResult.StatusMessage}");
+
+                        if (webResult.RequestId > 0)
+                            Console.WriteLine($"[*] Request ID              : {webResult.RequestId}");
+
+                        Console.WriteLine();
+
+                        if (webResult.Success && !string.IsNullOrEmpty(webResult.Certificate))
+                        {
+                            if (opts.OutputPem)
+                            {
+                                Console.WriteLine("[*] Certificate (PEM)       :");
+                                Console.WriteLine();
+                                Console.Write(csr.Item2);
+                                Console.Write(webResult.Certificate);
+                            }
+                            else
+                            {
+                                Console.WriteLine("[*] Certificate (PFX)       :");
+                                Console.WriteLine();
+                                Console.WriteLine(Convert.ToBase64String(CertTransformUtil.MakePfx(webResult.Certificate, csr.Item2)));
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("[*] Private Key (PEM)       :");
+                            Console.WriteLine();
+
+                            if (opts.OutputPem)
+                                Console.Write(csr.Item2);
+                            else
+                                Console.WriteLine(Convert.ToBase64String(Encoding.UTF8.GetBytes(csr.Item2)));
+
+                            if (webResult.RequestId > 0)
+                            {
+                                Console.WriteLine();
+                                Console.WriteLine($"[*] Retrieve the certificate once approved:");
+                                Console.WriteLine($"    Certify.exe request-download --ca {opts.CertificateAuthority} --id {webResult.RequestId} --web --web-host {caHost}{(opts.UseHttps ? " --https" : "")}");
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"[X] Error requesting the certificate via web enrollment: {e.Message}");
+                        Console.WriteLine();
+                        Console.WriteLine("[*] Private Key (PEM)       :");
+                        Console.WriteLine();
+
+                        if (opts.OutputPem)
+                            Console.Write(csr.Item2);
+                        else
+                            Console.WriteLine(Convert.ToBase64String(Encoding.UTF8.GetBytes(csr.Item2)));
+                    }
+                }
                 else
                 {
+                    // Standard RPC/DCOM enrollment path
                     try
                     {
                         int request_id = CertEnrollment.SendCertificateRequest(opts.CertificateAuthority, csr.Item1);
