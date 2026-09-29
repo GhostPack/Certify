@@ -71,20 +71,22 @@ namespace Certify.Domain
             try
             {
                 var interface_flags = GetInterfaceFlags();
-
                 RpcRequestEncryption = GetFlagState(interface_flags, InterfaceFlags.ENFORCE_ENCRYPT_ICERTREQUEST);
 
-                var request_restrictions = new List<Tuple<InterfaceFlags, string>>()
+                if (interface_flags.HasValue)
                 {
-                    new Tuple<InterfaceFlags, string>(InterfaceFlags.NO_REMOTE_ICERTREQUEST, "No Remote"),
-                    new Tuple<InterfaceFlags, string>(InterfaceFlags.NO_LOCAL_ICERTREQUEST, "No Local"),
-                    new Tuple<InterfaceFlags, string>(InterfaceFlags.NO_RPC_ICERTREQUEST, "No Access"),
-                };
+                    var request_restrictions = new List<Tuple<InterfaceFlags, string>>()
+                    {
+                        new Tuple<InterfaceFlags, string>(InterfaceFlags.NO_REMOTE_ICERTREQUEST, "No Remote"),
+                        new Tuple<InterfaceFlags, string>(InterfaceFlags.NO_LOCAL_ICERTREQUEST, "No Local"),
+                        new Tuple<InterfaceFlags, string>(InterfaceFlags.NO_RPC_ICERTREQUEST, "No Access"),
+                    };
 
-                foreach (var r in request_restrictions)
-                {
-                    if (TestFlagState(interface_flags, r.Item1))
-                        RpcRequestRestrictions.Add(r.Item2);
+                    foreach (var r in request_restrictions)
+                    {
+                        if (TestFlagState(interface_flags.Value, r.Item1))
+                            RpcRequestRestrictions.Add(r.Item2);
+                    }
                 }
             }
             catch (Exception e)
@@ -187,9 +189,9 @@ namespace Certify.Domain
 
         public ActiveDirectorySecurity GetServerSecurityFromRegistry()
         {
-            var security = GetRemoteRegistryKey<byte[]>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}", "Security");
+            var (found, security) = GetRemoteRegistryKey<byte[]>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}", "Security");
 
-            if (security != null)
+            if (found && security != null)
             {
                 var security_descriptor = new ActiveDirectorySecurity();
                 security_descriptor.SetSecurityDescriptorBinaryForm(security, AccessControlSections.All);
@@ -201,26 +203,29 @@ namespace Certify.Domain
 
         public RawSecurityDescriptor GetEnrollmentAgentSecurity()
         {
-            var rights = GetRemoteRegistryKey<byte[]>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}", "EnrollmentAgentRights");
-            return rights == null ? null : new RawSecurityDescriptor(rights, 0);
+            var (found, rights) = GetRemoteRegistryKey<byte[]>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}", "EnrollmentAgentRights");
+            return found && rights != null ? new RawSecurityDescriptor(rights, 0) : null;
         }
 
-        private EditFlags GetEditFlags()
+        private EditFlags? GetEditFlags()
         {
-            return (EditFlags)GetRemoteRegistryKey<int>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}\\PolicyModules\\CertificateAuthority_MicrosoftDefault.Policy", "EditFlags");
+            var (found, edit_flags) = GetRemoteRegistryKey<int>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}\\PolicyModules\\CertificateAuthority_MicrosoftDefault.Policy", "EditFlags");
+            return found ? (EditFlags?)edit_flags : null;
         }
 
-        private InterfaceFlags GetInterfaceFlags()
+        private InterfaceFlags? GetInterfaceFlags()
         {
-            return (InterfaceFlags)GetRemoteRegistryKey<int>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}", "InterfaceFlags");
+            var (found, interface_flags) = GetRemoteRegistryKey<int>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}", "InterfaceFlags");
+            return found ? (InterfaceFlags?)interface_flags : null;
         }
 
         private string[] GetDisableExtensionList()
         {
-            return GetRemoteRegistryKey<string[]>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}\\PolicyModules\\CertificateAuthority_MicrosoftDefault.Policy", "DisableExtensionList");
+            var (found, ext_list) = GetRemoteRegistryKey<string[]>($"SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\{Name}\\PolicyModules\\CertificateAuthority_MicrosoftDefault.Policy", "DisableExtensionList");
+            return found ? ext_list : null;
         }
 
-        private T GetRemoteRegistryKey<T>(string key_name, string value_name)
+        private (bool found, T value) GetRemoteRegistryKey<T>(string key_name, string value_name)
         {
             if (this.DnsHostname == null)
                 throw new NullReferenceException("DnsHostname is null");
@@ -237,7 +242,7 @@ namespace Certify.Domain
                     {
                         using (var sub_key = base_key.OpenSubKey(key_name))
                         {
-                            return (T)sub_key.GetValue(value_name);
+                            return (true, (T)sub_key.GetValue(value_name));
                         }
                     }
                     catch (SecurityException e)
@@ -249,19 +254,21 @@ namespace Certify.Domain
             catch (Exception e)
             {
                 Console.WriteLine($"[X] Could not connect to the HKLM hive - {e.Message}");
-                return default;
+                return (false, default(T));
             }
         }
 
-        private string GetFlagState<T>(T flags, T flag) where T : Enum
+        private string GetFlagState<T>(T? flags, T flag)
+            where T : struct, Enum
         {
-            if (TestFlagState(flags, flag))
-                return "Enabled";
-            else
-                return "Disabled";
+            if (flags is null)
+                return "Unknown";
+
+            return TestFlagState(flags.Value, flag) ? "Enabled" : "Disabled";
         }
 
-        private bool TestFlagState<T>(T flags, T flag) where T : Enum
+        private bool TestFlagState<T>(T flags, T flag)
+            where T : Enum
         {
             return flags.HasFlag(flag);
         }
